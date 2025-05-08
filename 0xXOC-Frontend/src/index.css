@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Minecraft font */
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/Minecraft.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/Minecraft-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Pixel Art Base Styles */
+@layer base {
+  html {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    font-family: 'Minecraft', monospace;
+  }
+
+  /* Remove default focus outlines and replace with pixel art style */
+  :focus {
+    outline: 2px solid theme('colors.mictlai.gold');
+    outline-offset: 1px;
+  }
+
+  /* Custom scrollbar for pixel art feel */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: theme('colors.mictlai.obsidian');
+    border-left: 2px solid theme('colors.mictlai.gold');
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: theme('colors.mictlai.blood');
+    border: 2px solid theme('colors.mictlai.gold');
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.mictlai.turquoise');
+  }
+}
+
+@layer components {
+  .pixel-btn {
+    @apply bg-mictlai-gold text-mictlai-obsidian px-4 py-2 border-3 border-b-5 border-r-5 border-mictlai-bone/20 shadow-pixel transition-all duration-100;
+  }
+  
+  .pixel-btn:hover {
+    @apply bg-mictlai-turquoise translate-y-0.5 translate-x-0.5 shadow-none border-b-3 border-r-3;
+  }
+  
+  .pixel-btn:active {
+    @apply bg-mictlai-blood text-mictlai-bone translate-y-1 translate-x-1 shadow-none border-b-1 border-r-1;
+  }
+  
+  .pixel-panel {
+    @apply bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg rounded-none;
+  }
+  
+  .pixel-input {
+    @apply bg-mictlai-obsidian text-mictlai-bone border-3 border-mictlai-gold px-4 py-2 shadow-pixel-inner rounded-none;
+  }
+  
+  .pixel-divider {
+    @apply border-t-3 border-mictlai-gold border-dotted my-4;
+  }
+  
+  .pixel-skull-icon {
+    @apply inline-block h-6 w-6 bg-contain bg-center bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23FFD700' d='M8 1C4.7 1 2 3.7 2 7c0 1.3.5 2.5 1.3 3.4 0 .1-.1.1-.1.2-.3.4-.5.9-.7 1.4h2c.2-.3.5-.6.8-.8.6.2 1.1.3 1.7.3.6 0 1.1-.1 1.7-.3.3.2.6.4.8.8h2c-.2-.5-.4-1-.7-1.4 0-.1-.1-.1-.1-.2C11.5 9.5 12 8.3 12 7c0-3.3-2.7-6-6-6zm-2.5 5c.8 0 1.5.7 1.5 1.5S6.3 9 5.5 9 4 8.3 4 7.5 4.7 6 5.5 6zm5 0c.8 0 1.5.7 1.5 1.5S11.3 9 10.5 9 9 8.3 9 7.5 9.7 6 10.5 6zM6 12c0 1.1.9 2 2 2s2-.9 2-2H6z'/%3E%3C/svg%3E");
+  }
+
+  /* Animation for pulsing highlights */
+  @keyframes pixel-pulse {
+    0%, 100% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+  
+  .pixel-pulse {
+    animation: pixel-pulse 1.5s infinite;
+  }
+}
