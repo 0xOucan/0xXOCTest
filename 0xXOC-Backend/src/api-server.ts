@@ -9,6 +9,15 @@ import { initializeAgent } from "./chatbot";
 import { pendingTransactions, updateTransactionStatus, getTransactionById } from "./utils/transaction-utils";
 import { startAtomicSwapRelay } from "./services/atomic-swap-relay";
 import { updateSwapStatus, getMostRecentSwap } from "./action-providers/basic-atomic-swaps/utils";
+import { sellingOrders } from "./action-providers/token-selling-order/utils";
+import { startTokenSellingOrderRelay } from "./services/token-selling-order-relay";
+import { 
+  buyingOrders,
+  getBuyingOrderById,
+  getBuyingOrders,
+  updateBuyingOrderStatus 
+} from './action-providers/token-buying-order/utils';
+import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
 
 dotenv.config();
 
@@ -98,6 +107,12 @@ async function createServer() {
     
     // Start the atomic swap relay service
     const stopRelayService = startAtomicSwapRelay();
+    
+    // Start the token selling order relay service
+    const stopTokenSellingOrderRelay = startTokenSellingOrderRelay();
+    
+    // Start the token buying order relay service
+    const stopTokenBuyingOrderRelay = startTokenBuyingOrderRelay();
     
     // Initialize the default agent cache
     agentCache["default-base"] = {
@@ -305,15 +320,301 @@ async function createServer() {
       });
     });
 
+    // Token Selling Order endpoints
+    
+    // Get all selling orders
+    app.get("/api/selling-orders", (req, res) => {
+      try {
+        // Convert from Map to Array for easier JSON serialization
+        const orders = Array.from(sellingOrders.values());
+        
+        // Apply filters if provided
+        const { token, status, limit = 10 } = req.query;
+        
+        let filteredOrders = orders;
+        
+        if (token && token !== 'ALL') {
+          filteredOrders = filteredOrders.filter(order => order.token === token);
+        }
+        
+        if (status && status !== 'ALL') {
+          filteredOrders = filteredOrders.filter(order => order.status === status);
+        }
+        
+        // Sort by creation time (newest first)
+        filteredOrders = filteredOrders.sort((a, b) => b.createdAt - a.createdAt);
+        
+        // Apply limit
+        if (limit) {
+          filteredOrders = filteredOrders.slice(0, parseInt(limit as string));
+        }
+        
+        return res.json({
+          success: true,
+          orders: filteredOrders
+        });
+      } catch (error) {
+        console.error('Error fetching selling orders:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+    
+    // Get specific selling order
+    app.get("/api/selling-orders/:orderId", (req, res) => {
+      try {
+        const { orderId } = req.params;
+        const order = sellingOrders.get(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        return res.json({
+          success: true,
+          order
+        });
+      } catch (error) {
+        console.error(`Error fetching selling order:`, error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+    
+    // Update selling order status
+    app.post("/api/selling-orders/:orderId/update", (req, res) => {
+      try {
+        const { orderId } = req.params;
+        const { status, additionalData } = req.body;
+        
+        const order = sellingOrders.get(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        // Update the order
+        const updatedOrder = {
+          ...order,
+          status,
+          ...additionalData
+        };
+        
+        sellingOrders.set(orderId, updatedOrder);
+        
+        return res.json({
+          success: true,
+          order: updatedOrder
+        });
+      } catch (error) {
+        console.error(`Error updating selling order:`, error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
+    // Get user's selling orders
+    app.get("/api/user/:address/selling-orders", (req, res) => {
+      try {
+        const { address } = req.params;
+        const { status, limit = 10 } = req.query;
+        
+        if (!address) {
+          return res.status(400).json({
+            success: false,
+            message: 'Address parameter is required'
+          });
+        }
+        
+        // Convert from Map to Array for easier JSON serialization
+        const orders = Array.from(sellingOrders.values());
+        
+        // Filter by user address and apply other filters
+        let filteredOrders = orders.filter(order => 
+          order.seller.toLowerCase() === address.toLowerCase()
+        );
+        
+        if (status && status !== 'ALL') {
+          filteredOrders = filteredOrders.filter(order => order.status === status);
+        }
+        
+        // Sort by creation time (newest first)
+        filteredOrders = filteredOrders.sort((a, b) => b.createdAt - a.createdAt);
+        
+        // Apply limit
+        if (limit) {
+          filteredOrders = filteredOrders.slice(0, parseInt(limit as string));
+        }
+        
+        return res.json({
+          success: true,
+          orders: filteredOrders
+        });
+      } catch (error) {
+        console.error('Error fetching user selling orders:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
+    // Token Buying Order endpoints
+    
+    // Get all buying orders
+    app.get('/api/buying-orders', (req, res) => {
+      try {
+        const { token, status, limit } = req.query;
+        
+        const tokenFilter = token ? token.toString() as 'XOC' | 'MXNe' | 'USDC' | 'ALL' : 'ALL';
+        const statusFilter = status ? status.toString() as 'pending' | 'active' | 'filled' | 'cancelled' | 'expired' | 'ALL' : 'active';
+        const limitNum = limit ? parseInt(limit.toString()) : 50;
+        
+        const orders = getBuyingOrders(tokenFilter, statusFilter, limitNum);
+        
+        res.json({
+          success: true,
+          orders
+        });
+      } catch (error) {
+        console.error('Error getting buying orders:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    app.get('/api/buying-orders/:orderId', (req, res) => {
+      try {
+        const { orderId } = req.params;
+        
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            error: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        res.json({
+          success: true,
+          order
+        });
+      } catch (error) {
+        console.error('Error getting buying order:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    app.post('/api/buying-orders/:orderId/update', (req, res) => {
+      try {
+        const { orderId } = req.params;
+        const { status, additionalData } = req.body;
+        
+        if (!status) {
+          return res.status(400).json({
+            success: false,
+            error: 'Status is required'
+          });
+        }
+        
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            error: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        // In a real implementation, this would include authentication
+        // to ensure only authorized users can update order status
+        
+        const updatedOrder = updateBuyingOrderStatus(
+          orderId,
+          status as 'pending' | 'active' | 'filled' | 'cancelled' | 'expired',
+          additionalData
+        );
+        
+        if (!updatedOrder) {
+          return res.status(500).json({
+            success: false,
+            error: `Failed to update order ${orderId}`
+          });
+        }
+        
+        res.json({
+          success: true,
+          order: updatedOrder
+        });
+      } catch (error) {
+        console.error('Error updating buying order:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    app.get('/api/user/:address/buying-orders', (req, res) => {
+      try {
+        const { address } = req.params;
+        const { token, status, limit } = req.query;
+        
+        const tokenFilter = token ? token.toString() as 'XOC' | 'MXNe' | 'USDC' | 'ALL' : 'ALL';
+        const statusFilter = status ? status.toString() as 'pending' | 'active' | 'filled' | 'cancelled' | 'expired' | 'ALL' : 'ALL';
+        const limitNum = limit ? parseInt(limit.toString()) : 50;
+        
+        const orders = getBuyingOrders(tokenFilter, statusFilter, limitNum, address);
+        
+        res.json({
+          success: true,
+          orders
+        });
+      } catch (error) {
+        console.error('Error getting user buying orders:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
     // Start the server
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
-      console.log(`🚀 MictlAItecuhtli API server running on port ${PORT}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🔗 Chat endpoint: http://localhost:${PORT}/api/agent/chat`);
-      console.log(`🔗 Wallet connection: http://localhost:${PORT}/api/wallet/connect`);
-      console.log(`🔗 Network selection: http://localhost:${PORT}/api/network/select`);
+      console.log(`🚀 API server running at http://localhost:${PORT}`);
+      
+      // Handle graceful shutdown
+      process.on('SIGINT', () => {
+        console.log('Shutting down API server...');
+        if (stopTokenSellingOrderRelay) stopTokenSellingOrderRelay();
+        if (stopTokenBuyingOrderRelay) stopTokenBuyingOrderRelay();
+        process.exit(0);
+      });
+      
+      // Log available API endpoints
+      console.log(`🔗 Transactions history: http://localhost:${PORT}/api/transactions`);
       console.log(`🔗 Pending transactions: http://localhost:${PORT}/api/transactions/pending`);
+      console.log(`🔗 Selling orders: http://localhost:${PORT}/api/selling-orders`);
+      console.log(`🔗 Buying orders: http://localhost:${PORT}/api/buying-orders`);
     });
   } catch (error) {
     console.error("🚨 Failed to start API server:", error);

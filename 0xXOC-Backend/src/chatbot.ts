@@ -24,7 +24,10 @@ import { balanceCheckerActionProvider } from "./action-providers/balance-checker
 import { mentoSwapActionProvider } from "./action-providers/mento-swap";
 import { cUSDescrowforiAmigoP2PActionProvider } from "./action-providers/cUSDescrowforiAmigoP2P";
 import { basicAtomicSwapActionProvider } from "./action-providers/basic-atomic-swaps";
+import { tokenSellingOrderActionProvider } from "./action-providers/token-selling-order";
+import { tokenBuyingOrderActionProvider } from "./action-providers/token-buying-order";
 import { createPendingTransaction, pendingTransactions } from "./utils/transaction-utils";
+import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
 
 dotenv.config();
 
@@ -277,6 +280,12 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
         
         // Include the multi-chain basic atomic swap provider for all networks
         basicAtomicSwapActionProvider(),
+        
+        // Include our token selling/buying order providers when on Base network
+        ...(selectedNetwork === "base" ? [
+          tokenSellingOrderActionProvider(),
+          tokenBuyingOrderActionProvider(),
+        ] : []),
       ],
     });
 
@@ -330,6 +339,22 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
         - Commands: 'provide XOC liquidity', 'provide 1.5 XOC as liquidity'
         
         ${
+          selectedNetwork === "base" ? `
+          🔹 Token Selling Orders:
+          - Create selling orders for XOC, MXNe, and USDC tokens
+          - List and view details of your selling orders
+          - Cancel your active orders
+          - Commands: 'create selling order for 10 XOC', 'list my selling orders', 'get selling order details'
+          
+          🔹 Token Buying Orders:
+          - Create buying orders for XOC, MXNe, and USDC tokens using OXXO Spin vouchers
+          - List and view details of your buying orders
+          - Cancel your active orders
+          - Commands: 'create buying order for 100 XOC with OXXO QR', 'list my buying orders', 'get buying order details'
+          ` : ''
+        }
+        
+        ${
           selectedNetwork === "celo" ? `
           🔹 Legacy Celo Functionality:
           - AAVE lending and borrowing
@@ -354,6 +379,7 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
         - USDT on zkSync Era is a stablecoin pegged to USD
         - Atomic swaps have a ${0.5}% fee
         - All USD values are approximations based on current market prices
+        - OXXO Spin QR codes are used to create buying orders with MXN (Mexican Pesos)
 
         First Steps:
         1) Greet the user and introduce yourself as MictlAItecuhtli.
