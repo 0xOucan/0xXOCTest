@@ -39,13 +39,110 @@ export default function OrdersDisplay() {
       setLoadingSellingOrders(true);
       setLoadingBuyingOrders(true);
       
-      const [sellOrders, buyOrders] = await Promise.all([
+      // Fetch real orders from the API
+      const [apiSellingOrders, apiBuyingOrders] = await Promise.all([
         getSellingOrders(tokenFilter, statusFilter),
         getBuyingOrders(tokenFilter, statusFilter)
       ]);
       
-      setSellingOrders(sellOrders);
-      setBuyingOrders(buyOrders);
+      // Create mock orders with exchange rate: 1 USDC = 20 MXN, 1 XOC = 1 MXN, 1 MXNe = 1 MXN
+      const mockSellingOrders: SellingOrder[] = [
+        {
+          orderId: 'mock-order-xoc-1',
+          seller: '0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45',
+          token: 'XOC',
+          amount: '10',
+          mxnAmount: '10',
+          status: 'active',
+          createdAt: Date.now() - 3600000, // 1 hour ago
+          expiresAt: Date.now() + 86400000 * 7, // 7 days from now
+          txHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+          memo: 'Mock XOC order - 1 XOC = 1 MXN'
+        },
+        {
+          orderId: 'mock-order-mxne-1',
+          seller: '0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45',
+          token: 'MXNe',
+          amount: '20',
+          mxnAmount: '20',
+          status: 'active',
+          createdAt: Date.now() - 7200000, // 2 hours ago
+          expiresAt: Date.now() + 86400000 * 7, // 7 days from now
+          txHash: '0xbcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890a',
+          memo: 'Mock MXNe order - 1 MXNe = 1 MXN'
+        },
+        {
+          orderId: 'mock-order-usdc-1',
+          seller: '0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45',
+          token: 'USDC',
+          amount: '5',
+          mxnAmount: '100',
+          status: 'active',
+          createdAt: Date.now() - 10800000, // 3 hours ago
+          expiresAt: Date.now() + 86400000 * 7, // 7 days from now
+          txHash: '0xcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab',
+          memo: 'Mock USDC order - 1 USDC = 20 MXN'
+        }
+      ];
+      
+      const mockBuyingOrders: BuyingOrder[] = [
+        {
+          orderId: 'mock-buy-order-xoc-1',
+          buyer: '0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45',
+          mxnAmount: 100,
+          token: 'XOC',
+          tokenAmount: '100',
+          status: 'active',
+          createdAt: Date.now() - 3600000, // 1 hour ago
+          expiresAt: Date.now() + 86400000 * 7, // 7 days from now
+          referenceCode: 'OXXO9876543210',
+          qrExpiration: '31/12/23 23:59:59',
+          memo: 'Mock XOC buying order - 100 MXN for 100 XOC'
+        },
+        {
+          orderId: 'mock-buy-order-mxne-1',
+          buyer: '0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45',
+          mxnAmount: 200,
+          token: 'MXNe',
+          tokenAmount: '200',
+          status: 'active',
+          createdAt: Date.now() - 7200000, // 2 hours ago
+          expiresAt: Date.now() + 86400000 * 7, // 7 days from now
+          referenceCode: 'OXXO8765432109',
+          qrExpiration: '31/12/23 23:59:59',
+          memo: 'Mock MXNe buying order - 200 MXN for 200 MXNe'
+        },
+        {
+          orderId: 'mock-buy-order-usdc-1',
+          buyer: '0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45',
+          mxnAmount: 100,
+          token: 'USDC',
+          tokenAmount: '5',
+          status: 'active',
+          createdAt: Date.now() - 10800000, // 3 hours ago
+          expiresAt: Date.now() + 86400000 * 7, // 7 days from now
+          referenceCode: 'OXXO7654321098',
+          qrExpiration: '31/12/23 23:59:59',
+          memo: 'Mock USDC buying order - 100 MXN for 5 USDC'
+        }
+      ];
+      
+      // Filter mock orders based on token and status filters
+      const filteredMockSellingOrders = mockSellingOrders.filter(order => {
+        if (tokenFilter !== 'ALL' && order.token !== tokenFilter) return false;
+        if (statusFilter !== 'ALL' && order.status !== statusFilter) return false;
+        return true;
+      });
+      
+      const filteredMockBuyingOrders = mockBuyingOrders.filter(order => {
+        if (tokenFilter !== 'ALL' && order.token !== tokenFilter) return false;
+        if (statusFilter !== 'ALL' && order.status !== statusFilter) return false;
+        return true;
+      });
+      
+      // Combine real and mock orders
+      setSellingOrders([...apiSellingOrders, ...filteredMockSellingOrders]);
+      setBuyingOrders([...apiBuyingOrders, ...filteredMockBuyingOrders]);
     } catch (error) {
       console.error('Error fetching orders:', error);
       addNotification(
