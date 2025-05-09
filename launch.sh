@@ -5,7 +5,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Launching MictlAI Web Interface${NC}"
+echo -e "${GREEN}🚀 Launching 0xXOC Marketplace Interface${NC}"
 echo "======================================"
 
 # Check if required dependencies are installed
@@ -21,8 +21,8 @@ if ! command -v npm &> /dev/null; then
 fi
 
 # Start the backend API server
-echo -e "${YELLOW}Starting MictlAI API server...${NC}"
-cd ./celo-mind-dn
+echo -e "${YELLOW}Starting 0xXOC API server...${NC}"
+cd ./0xXOC-Backend
 npm install
 npm run api &
 API_PID=$!
@@ -34,14 +34,14 @@ sleep 5
 
 # Start the frontend development server
 echo -e "${YELLOW}Starting frontend development server...${NC}"
-cd ../celo-mind-web
+cd ../0xXOC-Frontend
 npm install
 npm run dev &
 FRONTEND_PID=$!
 echo -e "${GREEN}✓ Frontend server started (PID: $FRONTEND_PID)${NC}"
 
 echo -e "${GREEN}======================================"
-echo -e "🌟 MictlAI is running!"
+echo -e "🌟 0xXOC Marketplace is running!"
 echo -e "📡 API: http://localhost:4000"
 echo -e "🖥️ Frontend: http://localhost:5173"
 echo -e "======================================${NC}"
