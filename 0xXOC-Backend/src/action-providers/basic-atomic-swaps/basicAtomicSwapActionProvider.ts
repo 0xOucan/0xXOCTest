@@ -438,11 +438,17 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         args: [escrowWalletAddress as `0x${string}`, amountInWei],
       });
       
-      // Transfer tokens to the escrow wallet
-      const txHash = await walletProvider.sendTransaction({
-        to: tokenAddress as `0x${string}`,
+      // Instead of directly calling sendTransaction, use createPendingTransaction to properly set chain info
+      const txId = createPendingTransaction(
+        XOC_TOKEN_ADDRESS,
+        "0", // No value since we're calling a contract
         data,
-      });
+        walletAddress,
+        'base' // Explicitly specify the chain
+      );
+      
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       return `✅ Successfully provided ${amount} ${tokenSymbol} as liquidity on ${chain.toUpperCase()}.\n\n${getTransactionTextLink(chain, txHash)}\n\nYour liquidity will be used to facilitate cross-chain swaps between Base and Arbitrum.`;
     } catch (error) {
@@ -535,25 +541,24 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
       
       console.log(`Sending XOC to escrow address: ${escrowWalletAddress}`);
       
-      // Instead of directly calling sendTransaction, use createPendingTransaction to properly set chain info
+      // Create encoded data for the transfer function
       const data = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: "transfer",
         args: [escrowWalletAddress as `0x${string}`, amountInWei],
       });
       
-      // Create a pending transaction for Base chain
+      // Instead of directly calling sendTransaction, use createPendingTransaction to properly set chain info
       const txId = createPendingTransaction(
         XOC_TOKEN_ADDRESS,
         "0", // No value since we're calling a contract
         data,
         senderAddress,
-        'base' // Explicitly specify Base chain
+        'base' // Explicitly specify the chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -567,7 +572,7 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'MXNB',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
@@ -575,7 +580,7 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
       // Now we need to send MXNB from escrow to recipient on Arbitrum
       // For now, we'll simulate this by just returning a success message
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} XOC on Base\n- ${getTransactionTextLink('base', sourceTxHash)}\n\n**To:**\n- ${targetAmount} MXNB on Arbitrum (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe MXNB will be sent to your address on Arbitrum once the Base transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} XOC on Base\n- ${getTransactionTextLink('base', txHash)}\n\n**To:**\n- ${targetAmount} MXNB on Arbitrum (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe MXNB will be sent to your address on Arbitrum once the Base transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping XOC to MXNB:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -681,9 +686,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'arbitrum' // Explicitly specify Arbitrum chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -697,12 +701,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'XOC',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} MXNB on Arbitrum\n- ${getTransactionTextLink('arbitrum', sourceTxHash)}\n\n**To:**\n- ${targetAmount} XOC on Base (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe XOC will be sent to your address on Base once the Arbitrum transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} MXNB on Arbitrum\n- ${getTransactionTextLink('arbitrum', txHash)}\n\n**To:**\n- ${targetAmount} XOC on Base (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe XOC will be sent to your address on Base once the Arbitrum transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping MXNB to XOC:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -872,9 +876,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'mantle' // Explicitly specify Mantle chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -888,12 +891,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'XOC',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on Mantle\n- ${getTransactionTextLink('mantle', sourceTxHash)}\n\n**To:**\n- ${targetAmount} XOC on Base (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe XOC will be sent to your address on Base once the Mantle transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on Mantle\n- ${getTransactionTextLink('mantle', txHash)}\n\n**To:**\n- ${targetAmount} XOC on Base (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe XOC will be sent to your address on Base once the Mantle transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping USDT to XOC:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -998,9 +1001,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'base' // Explicitly specify Base chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1014,12 +1016,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'USDT',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} XOC on Base\n- ${getTransactionTextLink('base', sourceTxHash)}\n\n**To:**\n- ${targetAmount} USDT on Mantle (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on Mantle once the Base transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} XOC on Base\n- ${getTransactionTextLink('base', txHash)}\n\n**To:**\n- ${targetAmount} USDT on Mantle (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on Mantle once the Base transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping XOC to USDT:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1124,9 +1126,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'mantle' // Explicitly specify Mantle chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1140,12 +1141,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'MXNB',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on Mantle\n- ${getTransactionTextLink('mantle', sourceTxHash)}\n\n**To:**\n- ${targetAmount} MXNB on Arbitrum (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe MXNB will be sent to your address on Arbitrum once the Mantle transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on Mantle\n- ${getTransactionTextLink('mantle', txHash)}\n\n**To:**\n- ${targetAmount} MXNB on Arbitrum (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe MXNB will be sent to your address on Arbitrum once the Mantle transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping USDT to MXNB:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1250,9 +1251,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'arbitrum' // Explicitly specify Arbitrum chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1266,12 +1266,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'USDT',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} MXNB on Arbitrum\n- ${getTransactionTextLink('arbitrum', sourceTxHash)}\n\n**To:**\n- ${targetAmount} USDT on Mantle (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on Mantle once the Arbitrum transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} MXNB on Arbitrum\n- ${getTransactionTextLink('arbitrum', txHash)}\n\n**To:**\n- ${targetAmount} USDT on Mantle (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on Mantle once the Arbitrum transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping MXNB to USDT:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1376,9 +1376,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'zksync' as 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync'
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1392,12 +1391,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'XOC',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on zkSync Era\n- ${getTransactionTextLink('zksync', sourceTxHash)}\n\n**To:**\n- ${targetAmount} XOC on Base (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe XOC will be sent to your address on Base once the zkSync Era transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on zkSync Era\n- ${getTransactionTextLink('zksync', txHash)}\n\n**To:**\n- ${targetAmount} XOC on Base (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe XOC will be sent to your address on Base once the zkSync Era transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping zkSync USDT to XOC:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1502,9 +1501,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'base' // Explicitly specify Base chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1518,12 +1516,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'USDT',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} XOC on Base\n- ${getTransactionTextLink('base', sourceTxHash)}\n\n**To:**\n- ${targetAmount} USDT on zkSync Era (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on zkSync Era once the Base transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} XOC on Base\n- ${getTransactionTextLink('base', txHash)}\n\n**To:**\n- ${targetAmount} USDT on zkSync Era (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on zkSync Era once the Base transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping XOC to zkSync USDT:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1628,9 +1626,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'zksync' as 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync'
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1644,12 +1641,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'MXNB',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on zkSync Era\n- ${getTransactionTextLink('zksync', sourceTxHash)}\n\n**To:**\n- ${targetAmount} MXNB on Arbitrum (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe MXNB will be sent to your address on Arbitrum once the zkSync Era transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on zkSync Era\n- ${getTransactionTextLink('zksync', txHash)}\n\n**To:**\n- ${targetAmount} MXNB on Arbitrum (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe MXNB will be sent to your address on Arbitrum once the zkSync Era transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping zkSync USDT to MXNB:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1754,9 +1751,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'arbitrum' // Explicitly specify Arbitrum chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1770,12 +1766,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'USDT',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} MXNB on Arbitrum\n- ${getTransactionTextLink('arbitrum', sourceTxHash)}\n\n**To:**\n- ${targetAmount} USDT on zkSync Era (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on zkSync Era once the Arbitrum transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} MXNB on Arbitrum\n- ${getTransactionTextLink('arbitrum', txHash)}\n\n**To:**\n- ${targetAmount} USDT on zkSync Era (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on zkSync Era once the Arbitrum transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping MXNB to zkSync USDT:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -1880,9 +1876,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'mantle' // Explicitly specify Mantle chain
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -1896,12 +1891,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'USDT',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on Mantle\n- ${getTransactionTextLink('mantle', sourceTxHash)}\n\n**To:**\n- ${targetAmount} USDT on zkSync Era (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on zkSync Era once the Mantle transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on Mantle\n- ${getTransactionTextLink('mantle', txHash)}\n\n**To:**\n- ${targetAmount} USDT on zkSync Era (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on zkSync Era once the Mantle transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping Mantle USDT to zkSync USDT:`, error);
       if (error instanceof InsufficientBalanceError || 
@@ -2006,9 +2001,8 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         'zksync' as 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync'
       );
       
-      // Get the transaction hash after the wallet signs it
-      // This will be handled by the frontend wallet connection
-      const sourceTxHash = txId; // We'll use the txId as a reference until the real hash is available
+      // Format the transaction ID as a hash to match the expected format
+      const txHash = `0x${txId.replace('tx-', '')}` as `0x${string}`;
       
       // Create a swap record
       const swapId = createSwapId();
@@ -2022,12 +2016,12 @@ export class BasicAtomicSwapActionProvider extends ActionProvider<EvmWalletProvi
         targetToken: 'USDT',
         senderAddress,
         recipientAddress: targetAddress,
-        sourceTxHash,
+        sourceTxHash: txHash,
         status: 'pending',
         timestamp: Date.now(),
       });
       
-      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on zkSync Era\n- ${getTransactionTextLink('zksync', sourceTxHash)}\n\n**To:**\n- ${targetAmount} USDT on Mantle (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on Mantle once the zkSync Era transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
+      return `✅ **Atomic Swap Initiated**\n\nSwap ID: ${swapId}\n\n**From:**\n- ${amount} USDT on zkSync Era\n- ${getTransactionTextLink('zksync', txHash)}\n\n**To:**\n- ${targetAmount} USDT on Mantle (after ${SWAP_FEE_PERCENTAGE}% fee)\n- Recipient: ${targetAddress}\n\nThe USDT will be sent to your address on Mantle once the zkSync Era transaction is confirmed. Use \`get_swap_receipt\` to check the status.`;
     } catch (error) {
       console.error(`Error swapping zkSync USDT to Mantle USDT:`, error);
       if (error instanceof InsufficientBalanceError || 

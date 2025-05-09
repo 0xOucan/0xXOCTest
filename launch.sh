@@ -20,10 +20,18 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
+# Configuration message
+echo -e "${YELLOW}Before starting, make sure you have:.${NC}"
+echo "1. Created a .env file in the 0xXOC-Backend directory with OPENAI_API_KEY and WALLET_PRIVATE_KEY"
+echo "2. Installed dependencies in both backend and frontend directories"
+echo ""
+read -p "Press Enter to continue or Ctrl+C to exit..."
+
 # Start the backend API server
 echo -e "${YELLOW}Starting 0xXOC API server...${NC}"
 cd ./0xXOC-Backend
 npm install
+npm run build
 npm run api &
 API_PID=$!
 echo -e "${GREEN}✓ API server started (PID: $API_PID)${NC}"

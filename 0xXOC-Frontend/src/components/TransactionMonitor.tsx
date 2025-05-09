@@ -135,6 +135,22 @@ export default function TransactionMonitor() {
         // Try to switch to the right network for the newest transaction
         if (transactions.length > 0) {
           const newestTransaction = transactions[transactions.length - 1];
+          // Log transaction metadata for debugging
+          console.log('New transaction details:', {
+            id: newestTransaction.id,
+            to: newestTransaction.to,
+            dataType: newestTransaction.metadata?.dataType,
+            dataSize: newestTransaction.metadata?.dataSize,
+            chain: newestTransaction.metadata?.chain || 'unknown'
+          });
+          
+          // Check if this might be a token selling order transaction
+          if (newestTransaction.metadata?.dataType === 'contract-call' && 
+              newestTransaction.data && 
+              newestTransaction.data.startsWith('0xa9059cbb')) {
+            console.log('🔶 Detected potential token transfer transaction for selling order');
+          }
+          
           ensureCorrectNetwork(newestTransaction);
         }
       }

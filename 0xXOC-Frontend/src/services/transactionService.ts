@@ -402,6 +402,44 @@ export const executeTransaction = async (
             break;
         }
         
+        // Log detailed information about the transaction
+        console.log(`Executing transaction on ${targetChain} chain:`, {
+          to: transaction.to,
+          value: transaction.value,
+          dataPrefix: transaction.data ? transaction.data.substring(0, 10) : 'none',
+          isTokenTransfer: transaction.data?.startsWith('0xa9059cbb') || false
+        });
+        
+        // Check if this is a token transfer transaction (selling order)
+        if (transaction.data?.startsWith('0xa9059cbb')) {
+          // This is the signature for ERC20 transfer(address,uint256)
+          console.log('🔍 Detected ERC20 token transfer transaction - likely for a selling order');
+          
+          // Extract recipient address from token transfer data
+          const recipientAddress = '0x' + transaction.data.substring(34, 74);
+          console.log(`Token transfer to address: ${recipientAddress}`);
+          
+          // Define known token addresses to recognize what's being transferred
+          const BASE_TOKEN_ADDRESSES = {
+            XOC: '0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf',
+            MXNe: '0x269caE7Dc59803e5C596c95756faEeBb6030E0aF',
+            USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+          };
+          
+          // Check which token is being transferred
+          const tokenAddress = transaction.to.toLowerCase();
+          let tokenSymbol = 'Unknown';
+          
+          for (const [symbol, address] of Object.entries(BASE_TOKEN_ADDRESSES)) {
+            if (tokenAddress === address.toLowerCase()) {
+              tokenSymbol = symbol;
+              break;
+            }
+          }
+          
+          console.log(`Transferring ${tokenSymbol} tokens to escrow wallet`);
+        }
+        
         // Re-create walletClient with the new chain ID to avoid mismatch errors
         walletClient = createWalletClient({
           account: walletClient.account,

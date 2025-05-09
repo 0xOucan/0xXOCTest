@@ -79,22 +79,86 @@ export const createPendingTransaction = (
   if (!determinedChain) {
     // Try to detect chain from token address
     const toAddressLower = formattedTo.toLowerCase();
-    if (toAddressLower === "0xa411c9aa00e020e4f88bc19996d29c5b7adb4acf") { // XOC on Base
-      determinedChain = 'base';
-      console.log('Auto-detected Base chain transaction');
-    } else if (toAddressLower === "0xf197ffc28c23e0309b5559e7a166f2c6164c80aa") { // MXNB on Arbitrum
-      determinedChain = 'arbitrum';
-      console.log('Auto-detected Arbitrum chain transaction');
-    } else if (toAddressLower === "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae") { // USDT on Mantle
-      determinedChain = 'mantle';
-      console.log('Auto-detected Mantle chain transaction');
-    } else if (toAddressLower === "0x493257fd37edb34451f62edf8d2a0c418852ba4c") { // USDT on zkSync Era
-      determinedChain = 'zksync';
-      console.log('Auto-detected zkSync Era chain transaction');
-    } else {
-      // Default to Base for new transactions
+    
+    // Token addresses
+    const BASE_TOKENS = {
+      XOC: "0xa411c9aa00e020e4f88bc19996d29c5b7adb4acf",
+      MXNe: "0x269cae7dc59803e5c596c95756faeebb6030e0af",
+      USDC: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+    };
+    
+    const ARBITRUM_TOKENS = {
+      MXNB: "0xf197ffc28c23e0309b5559e7a166f2c6164c80aa"
+    };
+    
+    const MANTLE_TOKENS = {
+      USDT: "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    };
+    
+    const ZKSYNC_TOKENS = {
+      USDT: "0x493257fd37edb34451f62edf8d2a0c418852ba4c"
+    };
+    
+    // Check if address matches any token
+    
+    // Check Base tokens
+    for (const [symbol, address] of Object.entries(BASE_TOKENS)) {
+      if (toAddressLower === address) {
+        determinedChain = 'base';
+        console.log(`Auto-detected Base chain transaction for ${symbol} token`);
+        break;
+      }
+    }
+    
+    // Check Arbitrum tokens if not found yet
+    if (!determinedChain) {
+      for (const [symbol, address] of Object.entries(ARBITRUM_TOKENS)) {
+        if (toAddressLower === address) {
+          determinedChain = 'arbitrum';
+          console.log(`Auto-detected Arbitrum chain transaction for ${symbol} token`);
+          break;
+        }
+      }
+    }
+    
+    // Check Mantle tokens if not found yet
+    if (!determinedChain) {
+      for (const [symbol, address] of Object.entries(MANTLE_TOKENS)) {
+        if (toAddressLower === address) {
+          determinedChain = 'mantle';
+          console.log(`Auto-detected Mantle chain transaction for ${symbol} token`);
+          break;
+        }
+      }
+    }
+    
+    // Check zkSync tokens if not found yet
+    if (!determinedChain) {
+      for (const [symbol, address] of Object.entries(ZKSYNC_TOKENS)) {
+        if (toAddressLower === address) {
+          determinedChain = 'zksync';
+          console.log(`Auto-detected zkSync Era chain transaction for ${symbol} token`);
+          break;
+        }
+      }
+    }
+    
+    // Default to Base for new transactions if not detected
+    if (!determinedChain) {
       determinedChain = 'base';
     }
+  }
+
+  // Determine data type with better precision
+  let dataType = 'unknown';
+  if (!formattedData) {
+    dataType = 'native-transfer';
+  } else if (formattedData.startsWith('0xa9059cbb')) {
+    dataType = 'token-transfer'; // ERC20 transfer(address,uint256)
+  } else if (formattedData.startsWith('0x095ea7b3')) {
+    dataType = 'token-approval'; // ERC20 approve(address,uint256)
+  } else if (formattedData.startsWith('0x')) {
+    dataType = 'contract-call';
   }
 
   // Create transaction object
@@ -111,10 +175,7 @@ export const createPendingTransaction = (
       walletAddress: walletAddress || formattedTo,
       requiresSignature: !!walletAddress,
       dataSize: formattedData ? formattedData.length : 0,
-      dataType: formattedData ? 
-        (formattedData.startsWith('0x6') ? 'contract-call' : 
-         formattedData.startsWith('0xa9') ? 'token-approval' : 'unknown') 
-        : 'native-transfer',
+      dataType: dataType,
       chain: determinedChain
     }
   };

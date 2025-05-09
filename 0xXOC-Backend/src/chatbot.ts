@@ -223,7 +223,14 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
         // 2. Patch sendTransaction
         const origSendTx = walletProvider.sendTransaction.bind(walletProvider);
         walletProvider.sendTransaction = async (tx: any): Promise<`0x${string}`> => {
-          console.log(`Intercepting sendTransaction:`, JSON.stringify(tx, null, 2));
+          // Convert BigInt to string to avoid JSON serialization issues
+          const txForLogging = {
+            ...tx,
+            value: tx.value ? tx.value.toString() : '0',
+          };
+          
+          console.log(`Intercepting sendTransaction:`, JSON.stringify(txForLogging, null, 2));
+          
           // Use the imported utility function
           const txId = createPendingTransaction(
             tx.to, 

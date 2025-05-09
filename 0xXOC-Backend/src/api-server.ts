@@ -244,17 +244,43 @@ async function createServer() {
         const { txId } = req.params;
         const { status, hash } = req.body;
         
+        // Log more details for debugging
+        console.log(`📝 Updating transaction ${txId}:`, {
+          newStatus: status,
+          hash: hash || 'N/A',
+          requestData: req.body
+        });
+        
         // Use the utility function instead of directly manipulating the array
         const updatedTx = updateTransactionStatus(txId, status, hash);
         
         if (!updatedTx) {
+          console.warn(`⚠️ Transaction with ID ${txId} not found during status update`);
           return res.status(404).json({
             success: false,
             message: `Transaction with ID ${txId} not found`
           });
         }
         
-        console.log(`Transaction ${txId} updated: status=${status}, hash=${hash || 'N/A'}`);
+        // Check if this is a token transfer (potentially for selling order)
+        if (updatedTx.data && updatedTx.data.startsWith('0xa9059cbb')) {
+          console.log(`🔷 Token transfer transaction ${txId} updated to ${status}`);
+          
+          // If the transaction was for a selling order, update the order status too
+          try {
+            // Extract token address from transaction
+            const tokenAddress = updatedTx.to.toLowerCase();
+            
+            // Log for debugging
+            console.log(`Checking for selling orders with token address: ${tokenAddress}`);
+            
+            // Skip the actual updating for now as we don't have a direct link to orders
+          } catch (orderError) {
+            console.error('Error updating associated selling order:', orderError);
+          }
+        }
+        
+        console.log(`✅ Transaction ${txId} updated: status=${status}, hash=${hash || 'N/A'}`);
         
         // Update any associated atomic swap records with the real transaction hash
         updateAssociatedSwapRecords(txId, status, hash);

@@ -47,10 +47,36 @@ export default function CreateSellingOrder() {
       setIsSubmitting(true);
       setResponse(null);
       
+      // Show a notification to check wallet
+      addNotification(
+        'Please check your wallet to approve the transaction',
+        NotificationType.INFO,
+        'Your wallet will ask you to approve sending tokens to the escrow wallet'
+      );
+      
+      // Log information about the transaction
+      console.log('Creating selling order:', {
+        token: formData.token,
+        amount: formData.amount,
+        mxnAmount: formData.mxnAmount
+      });
+      
       const result = await createSellingOrder(formData);
       
       setResponse(result);
       addNotification('Selling order created successfully', NotificationType.SUCCESS);
+      
+      // Wait a moment to ensure transaction monitoring picks up the pending transaction
+      setTimeout(() => {
+        // Tell the user to confirm in their wallet if the response indicates transaction is pending
+        if (result.includes('PENDING') || result.includes('pending')) {
+          addNotification(
+            'Your wallet should prompt you to confirm the transaction',
+            NotificationType.INFO,
+            'Please check your browser wallet extension'
+          );
+        }
+      }, 500);
       
       // Reset form after successful submission
       setFormData({
