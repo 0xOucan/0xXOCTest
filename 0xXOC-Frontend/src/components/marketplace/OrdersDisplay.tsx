@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../providers/WalletContext';
 import { 
   getSellingOrders, 
@@ -17,6 +18,7 @@ import { formatAddress, formatTimeAgo } from '../../utils/formatting';
 export default function OrdersDisplay() {
   const { connectedAddress, isConnected } = useWallet();
   const { addNotification } = useNotification();
+  const navigate = useNavigate();
   
   // State variables
   const [activeTab, setActiveTab] = useState<'sell' | 'buy'>('sell');
@@ -189,6 +191,15 @@ export default function OrdersDisplay() {
     }
   };
   
+  // Handle order click
+  const handleOrderClick = (orderId: string, type: 'sell' | 'buy') => {
+    if (type === 'sell') {
+      navigate(`/marketplace/selling-order/${orderId}`);
+    } else {
+      navigate(`/marketplace/buying-order/${orderId}`);
+    }
+  };
+  
   // Get token emoji
   const getTokenEmoji = (token: string) => {
     switch (token) {
@@ -336,7 +347,8 @@ export default function OrdersDisplay() {
                 {sellingOrders.map(order => (
                   <div 
                     key={order.orderId} 
-                    className="border-3 border-mictlai-gold/30 shadow-pixel bg-black p-3"
+                    className="border-3 border-mictlai-gold/30 shadow-pixel bg-black p-3 cursor-pointer hover:border-mictlai-gold/50 transition-colors"
+                    onClick={() => handleOrderClick(order.orderId, 'sell')}
                   >
                     <div className="flex justify-between items-start">
                       <div>
@@ -369,7 +381,10 @@ export default function OrdersDisplay() {
                         {/* Cancel button (only for active orders by the connected user) */}
                         {order.status === 'active' && isConnected && order.seller.toLowerCase() === connectedAddress?.toLowerCase() && (
                           <button
-                            onClick={() => handleCancelOrder(order.orderId, 'sell')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order.orderId, 'sell');
+                            }}
                             disabled={isCancelling === order.orderId}
                             className="mt-2 border-2 border-mictlai-blood text-mictlai-blood text-xs font-pixel py-1 px-2 hover:bg-mictlai-blood/20 transition-colors"
                           >
@@ -402,7 +417,8 @@ export default function OrdersDisplay() {
                 {buyingOrders.map(order => (
                   <div 
                     key={order.orderId} 
-                    className="border-3 border-mictlai-gold/30 shadow-pixel bg-black p-3"
+                    className="border-3 border-mictlai-gold/30 shadow-pixel bg-black p-3 cursor-pointer hover:border-mictlai-gold/50 transition-colors"
+                    onClick={() => handleOrderClick(order.orderId, 'buy')}
                   >
                     <div className="flex justify-between items-start">
                       <div>
@@ -438,7 +454,10 @@ export default function OrdersDisplay() {
                         {/* Cancel button (only for active orders by the connected user) */}
                         {order.status === 'active' && isConnected && order.buyer.toLowerCase() === connectedAddress?.toLowerCase() && (
                           <button
-                            onClick={() => handleCancelOrder(order.orderId, 'buy')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order.orderId, 'buy');
+                            }}
                             disabled={isCancelling === order.orderId}
                             className="mt-2 border-2 border-mictlai-blood text-mictlai-blood text-xs font-pixel py-1 px-2 hover:bg-mictlai-blood/20 transition-colors"
                           >
