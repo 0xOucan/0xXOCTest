@@ -18,6 +18,9 @@ export interface PendingTransaction {
     dataSize: number;
     dataType: string;
     chain?: 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync';
+    type?: string; // type of transaction (e.g., token_transfer)
+    orderId?: string; // for marketplace orders
+    [key: string]: any; // allow additional metadata
   };
 }
 
@@ -32,6 +35,7 @@ export const pendingTransactions: PendingTransaction[] = [];
  * @param data Optional transaction data
  * @param walletAddress Optional wallet address (for frontend wallet tracking)
  * @param chain Optional chain identifier (celo, base, arbitrum, mantle, zksync)
+ * @param additionalMetadata Optional additional metadata for the transaction
  * @returns Transaction ID
  */
 export const createPendingTransaction = (
@@ -39,7 +43,8 @@ export const createPendingTransaction = (
   value: string, 
   data?: string,
   walletAddress?: string,
-  chain?: 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync'
+  chain?: 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync',
+  additionalMetadata?: Record<string, any>
 ): string => {
   const txId = `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   
@@ -104,7 +109,7 @@ export const createPendingTransaction = (
     // Check Base tokens
     for (const [symbol, address] of Object.entries(BASE_TOKENS)) {
       if (toAddressLower === address) {
-        determinedChain = 'base';
+      determinedChain = 'base';
         console.log(`Auto-detected Base chain transaction for ${symbol} token`);
         break;
       }
@@ -114,7 +119,7 @@ export const createPendingTransaction = (
     if (!determinedChain) {
       for (const [symbol, address] of Object.entries(ARBITRUM_TOKENS)) {
         if (toAddressLower === address) {
-          determinedChain = 'arbitrum';
+      determinedChain = 'arbitrum';
           console.log(`Auto-detected Arbitrum chain transaction for ${symbol} token`);
           break;
         }
@@ -125,7 +130,7 @@ export const createPendingTransaction = (
     if (!determinedChain) {
       for (const [symbol, address] of Object.entries(MANTLE_TOKENS)) {
         if (toAddressLower === address) {
-          determinedChain = 'mantle';
+      determinedChain = 'mantle';
           console.log(`Auto-detected Mantle chain transaction for ${symbol} token`);
           break;
         }
@@ -136,7 +141,7 @@ export const createPendingTransaction = (
     if (!determinedChain) {
       for (const [symbol, address] of Object.entries(ZKSYNC_TOKENS)) {
         if (toAddressLower === address) {
-          determinedChain = 'zksync';
+      determinedChain = 'zksync';
           console.log(`Auto-detected zkSync Era chain transaction for ${symbol} token`);
           break;
         }
@@ -176,7 +181,9 @@ export const createPendingTransaction = (
       requiresSignature: !!walletAddress,
       dataSize: formattedData ? formattedData.length : 0,
       dataType: dataType,
-      chain: determinedChain
+      chain: determinedChain,
+      // Include additional metadata if provided
+      ...(additionalMetadata || {})
     }
   };
   

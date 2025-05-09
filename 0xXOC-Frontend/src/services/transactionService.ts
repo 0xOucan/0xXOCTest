@@ -19,6 +19,7 @@ export interface PendingTransaction {
   status: string;
   timestamp: number;
   hash?: string;
+  type?: string; // Add type field to identify transaction type
   metadata?: {
     source: string;
     walletAddress: string;
@@ -26,6 +27,9 @@ export interface PendingTransaction {
     dataSize: number;
     dataType: string;
     chain?: 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync';
+    orderId?: string; // Add orderId for token selling orders
+    postedToMarketplace?: boolean; // Track if the order has been posted to marketplace
+    [key: string]: any; // Allow additional metadata properties
   };
 }
 
@@ -204,6 +208,46 @@ export const updateTransactionStatus = async (
     console.error(`Error updating transaction ${txId}:`, error);
     throw new TransactionError(
       'Failed to update transaction status',
+      'update_error',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+  }
+};
+
+/**
+ * Update transaction hash on the backend
+ */
+export const updateTransactionHash = async (
+  txId: string, 
+  hash: string
+): Promise<PendingTransaction | null> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/transactions/${txId}/hash`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ hash })
+    });
+    
+    if (!response.ok) {
+      throw new TransactionError(
+        `Failed to update transaction hash: ${response.statusText}`,
+        'update_error',
+        `Status: ${response.status}`
+      );
+    }
+    
+    const data = await response.json();
+    return data.transaction || null;
+  } catch (error) {
+    if (error instanceof TransactionError) {
+      throw error;
+    }
+    
+    console.error(`Error updating transaction hash for ${txId}:`, error);
+    throw new TransactionError(
+      'Failed to update transaction hash',
       'update_error',
       error instanceof Error ? error.message : 'Unknown error'
     );
@@ -710,5 +754,36 @@ export const processPendingTransactions = async (walletClient: any): Promise<voi
     }
   } catch (error) {
     console.error('❌ Error processing pending transactions:', error);
+  }
+};
+
+/**
+ * Get transaction details from the backend
+ */
+export const getTransactionDetails = async (txId: string): Promise<PendingTransaction | null> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/transactions/${txId}`);
+    
+    if (!response.ok) {
+      throw new TransactionError(
+        `Failed to fetch transaction details: ${response.statusText}`,
+        'fetch_error',
+        `Status: ${response.status}`
+      );
+    }
+    
+    const data = await response.json();
+    return data.transaction || null;
+  } catch (error) {
+    if (error instanceof TransactionError) {
+      throw error;
+    }
+    
+    console.error(`Error fetching transaction details for ${txId}:`, error);
+    throw new TransactionError(
+      'Failed to fetch transaction details',
+      'fetch_error',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }; 

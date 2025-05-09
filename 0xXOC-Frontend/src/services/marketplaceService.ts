@@ -154,6 +154,49 @@ export const cancelSellingOrder = async (orderId: string): Promise<string> => {
   }
 };
 
+/**
+ * Activate a selling order in the marketplace after transaction confirmation
+ */
+export const activateSellingOrder = async (orderId: string, txHash: string): Promise<SellingOrder> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/selling-orders/${orderId}/activate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ txHash }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to activate selling order');
+    }
+    
+    const data = await response.json();
+    return data.order;
+  } catch (error) {
+    console.error(`Error activating selling order ${orderId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Activate a selling order using the agent API
+ */
+export const activateSellingOrderWithAgent = async (orderId: string, txHash: string): Promise<string> => {
+  try {
+    // Format the command for the AI agent
+    const message = `activate_selling_order orderId=${orderId} txHash=${txHash}`;
+    
+    // Use the agent service to send the command
+    const response = await sendChatMessage(message);
+    return response.message || response.rawResponse || 'Order activation command sent';
+  } catch (error) {
+    console.error(`Error activating selling order ${orderId}:`, error);
+    throw error;
+  }
+};
+
 // Buying Order API Calls
 export const getBuyingOrders = async (
   token?: 'XOC' | 'MXNe' | 'USDC' | 'ALL',

@@ -35,12 +35,6 @@ export default function OrdersDisplay() {
   
   // Function to fetch orders from the backend
   const fetchOrders = async () => {
-    // For now, use mock data
-    setSellingOrders(getMockSellingOrders());
-    setBuyingOrders(getMockBuyingOrders());
-    
-    // When the backend is ready, use this code instead:
-    /*
     try {
       setLoadingSellingOrders(true);
       setLoadingBuyingOrders(true);
@@ -63,7 +57,6 @@ export default function OrdersDisplay() {
       setLoadingSellingOrders(false);
       setLoadingBuyingOrders(false);
     }
-    */
   };
   
   // Handle order cancellation

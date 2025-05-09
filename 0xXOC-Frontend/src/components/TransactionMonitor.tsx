@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useWallet } from '../providers/WalletContext';
 import { useWallets } from '@privy-io/react-auth';
 import { TransactionStatus } from '../constants/network';
@@ -10,8 +10,18 @@ import {
   PendingTransaction,
   switchToCeloChain,
   switchToChain,
-  executeTransaction
+  executeTransaction,
+  getTransactionDetails,
+  updateTransactionHash
 } from '../services/transactionService';
+import { useNotification, NotificationType } from '../utils/notification';
+import { LoadingIcon } from './Icons';
+import { formatAddress } from '../utils/formatting';
+import { activateSellingOrder } from '../services/marketplaceService';
+
+// Define the ExtendedTransaction type that extends PendingTransaction
+// No need for a separate type as PendingTransaction already has all the fields we need
+// We'll just use PendingTransaction directly
 
 // Polling interval for checking pending transactions
 const POLL_INTERVAL = 3000; // 3 seconds
@@ -28,6 +38,8 @@ export default function TransactionMonitor() {
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [forceVisible, setForceVisible] = useState(false);
+  const { addNotification } = useNotification();
+  const [processingTx, setProcessingTx] = useState<string | null>(null);
 
   // Helper to get the primary wallet
   const getPrimaryWallet = () => {
@@ -155,46 +167,51 @@ export default function TransactionMonitor() {
         }
       }
       
-      // Move completed transactions to completedTransactions
+      // Process and categorize transactions
       const currentTime = Date.now();
-      const newCompletedTxs: PendingTransaction[] = [];
+      const pendingTxs: PendingTransaction[] = [];
+      const completedTxs: PendingTransaction[] = [];
       
-      // Check for any transactions that were previously pending but are now confirmed
-      pendingTransactions.forEach(oldTx => {
-        const updatedTx = transactions.find(tx => tx.id === oldTx.id);
-        
-        // If the transaction was previously pending but is now confirmed/failed/rejected
-        if (updatedTx && 
-            (oldTx.status === 'pending' || oldTx.status === 'submitted') && 
-            (updatedTx.status === 'confirmed' || updatedTx.status === 'failed' || updatedTx.status === 'rejected')) {
+      // Sort transactions into pending and completed
+      transactions.forEach(tx => {
+        if (tx.status === 'pending' || tx.status === 'submitted') {
+          pendingTxs.push(tx);
+        } else if (tx.status === 'confirmed' || tx.status === 'failed' || tx.status === 'rejected') {
           // Ensure the timestamp is properly set
-          updatedTx.timestamp = updatedTx.timestamp || currentTime;
-          newCompletedTxs.push(updatedTx);
-          console.log('Moving transaction to completed:', updatedTx);
+          tx.timestamp = tx.timestamp || currentTime;
+          
+          // Preserve the postedToMarketplace flag if it was previously set
+          const existingTx = pendingTransactions.find(t => t.id === tx.id) || 
+                            completedTransactions.find(t => t.id === tx.id);
+          
+          if (existingTx && existingTx.metadata?.postedToMarketplace && tx.metadata) {
+            tx.metadata.postedToMarketplace = true;
+          }
+          
+          completedTxs.push(tx);
         }
       });
       
-      // Add new completed transactions
-      if (newCompletedTxs.length > 0) {
-        setCompletedTransactions(prev => {
-          // Filter out expired completed transactions (older than KEEP_COMPLETED_FOR_MS)
-          const filteredPrev = prev.filter(tx => 
-            currentTime - (tx.timestamp || 0) < KEEP_COMPLETED_FOR_MS
-          );
-          
-          // Add new completed transactions
-          return [...filteredPrev, ...newCompletedTxs];
-        });
-      }
+      // Update completed transactions state
+      setCompletedTransactions(prev => {
+        // Filter out expired completed transactions (older than KEEP_COMPLETED_FOR_MS)
+        const filteredPrev = prev.filter(tx => 
+          currentTime - (tx.timestamp || 0) < KEEP_COMPLETED_FOR_MS
+        );
+        
+        // Merge with new completed transactions, avoiding duplicates
+        const existingIds = new Set(filteredPrev.map(tx => tx.id));
+        const newCompletedTxs = completedTxs.filter(tx => !existingIds.has(tx.id));
+        
+        return [...filteredPrev, ...newCompletedTxs];
+      });
       
-      // Update pending transactions - only include actual pending ones
-      setPendingTransactions(transactions.filter(tx => 
-        tx.status === 'pending' || tx.status === 'submitted'
-      ));
+      // Update pending transactions state
+      setPendingTransactions(pendingTxs);
 
       // Log current state of transactions for debugging
-      console.log('Current pending transactions:', pendingTransactions.length);
-      console.log('Current completed transactions:', completedTransactions.length);
+      console.log('Current pending transactions:', pendingTxs.length);
+      console.log('Current completed transactions:', completedTxs.length);
     } catch (error) {
       console.error('Error fetching pending transactions:', error);
     }
@@ -440,6 +457,27 @@ export default function TransactionMonitor() {
                             </a>
                           )}
                         </div>
+                        {/* Additional actions based on transaction type */}
+                        {tx.status === 'confirmed' && 
+                         tx.metadata?.orderId && 
+                         !tx.metadata?.postedToMarketplace && (
+                          <div className="mt-3">
+                            <button
+                              onClick={() => handlePostToMarketplace(tx)}
+                              disabled={processingTx === tx.id}
+                              className="w-full bg-mictlai-gold text-black font-pixel text-xs py-1.5 px-3 hover:bg-mictlai-gold/80 transition-colors flex items-center justify-center gap-2"
+                            >
+                              {processingTx === tx.id ? (
+                                <>
+                                  <LoadingIcon className="w-3 h-3" />
+                                  POSTING...
+                                </>
+                              ) : (
+                                'POST TO MARKETPLACE'
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -486,6 +524,35 @@ export default function TransactionMonitor() {
                             </span>
                           </div>
                         </div>
+                        
+                        {/* Transaction content */}
+                        <div className="text-mictlai-bone/60 text-xs font-pixel">
+                          {tx.to ? `TO: ${tx.to.substring(0, 10)}...` : ''}
+                          {tx.value ? ` | VALUE: ${tx.value}` : ''}
+                        </div>
+                        
+                        {/* Add Post to Marketplace button for completed transactions too */}
+                        {tx.status === 'confirmed' && 
+                         tx.metadata?.orderId && 
+                         !tx.metadata?.postedToMarketplace && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => handlePostToMarketplace(tx)}
+                              disabled={processingTx === tx.id}
+                              className="w-full bg-mictlai-gold text-black font-pixel text-xs py-1.5 px-3 hover:bg-mictlai-gold/80 transition-colors flex items-center justify-center gap-2"
+                            >
+                              {processingTx === tx.id ? (
+                                <>
+                                  <LoadingIcon className="w-3 h-3" />
+                                  POSTING...
+                                </>
+                              ) : (
+                                'POST TO MARKETPLACE'
+                              )}
+                            </button>
+                          </div>
+                        )}
+                        
                         {tx.hash && (
                           <div className="mt-2 text-right">
                             <a 
@@ -515,5 +582,91 @@ export default function TransactionMonitor() {
     );
   };
 
+  const refreshTransaction = async (txId: string) => {
+    // ... existing code ...
+  };
+  
+  // Function to handle posting selling order to marketplace
+  const handlePostToMarketplace = async (transaction: PendingTransaction) => {
+    // Check if we have the required order ID
+    if (!transaction.metadata?.orderId) {
+      addNotification('Cannot post to marketplace: missing order ID', NotificationType.ERROR);
+      return;
+    }
+    
+    try {
+      setProcessingTx(transaction.id);
+      
+      // Check if this is a confirmed transaction with a hash
+      if (transaction.status === 'confirmed' && transaction.hash) {
+        const orderId = transaction.metadata.orderId;
+        
+        // First update the transaction hash if needed
+        await updateTransactionHash(transaction.id, transaction.hash);
+        
+        // Then activate the selling order with the transaction hash
+        await activateSellingOrder(orderId, transaction.hash);
+        
+        // Show success notification
+        addNotification(
+          'Selling order posted to marketplace', 
+          NotificationType.SUCCESS,
+          `Order ${orderId} is now active and visible in the marketplace.`
+        );
+        
+        // Check if this transaction is in pendingTransactions or completedTransactions
+        const isPending = pendingTransactions.some(tx => tx.id === transaction.id);
+        
+        if (isPending) {
+          // Update pending transactions to mark this one as posted
+          const updatedTransactions = [...pendingTransactions];
+          const txIndex = updatedTransactions.findIndex(tx => tx.id === transaction.id);
+          
+          if (txIndex !== -1 && updatedTransactions[txIndex].metadata) {
+            // Create a safely updated transaction
+            updatedTransactions[txIndex] = {
+              ...updatedTransactions[txIndex],
+              metadata: {
+                ...(updatedTransactions[txIndex].metadata || {}),
+                postedToMarketplace: true
+              }
+            };
+            
+            // Update state with the new array
+            setPendingTransactions(updatedTransactions);
+          }
+        } else {
+          // Update completed transactions to mark this one as posted
+          const updatedCompletedTransactions = [...completedTransactions];
+          const txIndex = updatedCompletedTransactions.findIndex(tx => tx.id === transaction.id);
+          
+          if (txIndex !== -1 && updatedCompletedTransactions[txIndex].metadata) {
+            // Create a safely updated transaction
+            updatedCompletedTransactions[txIndex] = {
+              ...updatedCompletedTransactions[txIndex],
+              metadata: {
+                ...(updatedCompletedTransactions[txIndex].metadata || {}),
+                postedToMarketplace: true
+              }
+            };
+            
+            // Update state with the new array
+            setCompletedTransactions(updatedCompletedTransactions);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error posting to marketplace:', error);
+      addNotification(
+        'Failed to post order to marketplace', 
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    } finally {
+      setProcessingTx(null);
+    }
+  };
+
+  // Simply return the transaction monitor UI
   return renderTransactionMonitor();
 } 

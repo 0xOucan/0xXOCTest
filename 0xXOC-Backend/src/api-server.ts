@@ -238,62 +238,105 @@ async function createServer() {
       }
     });
     
-    // Update transaction status
-    app.post("/api/transactions/:txId/update", (req, res) => {
+    // Transaction update endpoint
+    app.post("/api/transactions/:txId/update", async (req, res) => {
       try {
         const { txId } = req.params;
         const { status, hash } = req.body;
         
-        // Log more details for debugging
-        console.log(`📝 Updating transaction ${txId}:`, {
-          newStatus: status,
-          hash: hash || 'N/A',
-          requestData: req.body
-        });
-        
-        // Use the utility function instead of directly manipulating the array
-        const updatedTx = updateTransactionStatus(txId, status, hash);
-        
-        if (!updatedTx) {
-          console.warn(`⚠️ Transaction with ID ${txId} not found during status update`);
-          return res.status(404).json({
-            success: false,
-            message: `Transaction with ID ${txId} not found`
+        if (!txId) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Transaction ID is required' 
           });
         }
         
-        // Check if this is a token transfer (potentially for selling order)
-        if (updatedTx.data && updatedTx.data.startsWith('0xa9059cbb')) {
-          console.log(`🔷 Token transfer transaction ${txId} updated to ${status}`);
+        // Update transaction status
+        const transaction = updateTransactionStatus(txId, status, hash);
+        
+        if (!transaction) {
+          return res.status(404).json({ 
+            success: false, 
+            message: `Transaction with ID ${txId} not found` 
+          });
+        }
+        
+        // Update associated swap records if transaction is confirmed
+        if (status === 'confirmed' && hash) {
+          updateAssociatedSwapRecords(txId, status, hash);
+        }
+        
+        return res.json({ 
+          success: true, 
+          transaction 
+        });
+      } catch (error) {
+        console.error('Error updating transaction:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: error instanceof Error ? error.message : 'Unknown server error' 
+        });
+      }
+    });
+    
+    // Transaction hash update endpoint (for updating order hashes after confirmation)
+    app.post("/api/transactions/:txId/hash", async (req, res) => {
+      try {
+        const { txId } = req.params;
+        const { hash } = req.body;
+        
+        if (!txId) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Transaction ID is required' 
+          });
+        }
+        
+        if (!hash) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Transaction hash is required' 
+          });
+        }
+        
+        // Get the transaction
+        const transaction = getTransactionById(txId);
+        
+        if (!transaction) {
+          return res.status(404).json({ 
+            success: false, 
+            message: `Transaction with ID ${txId} not found` 
+          });
+        }
+        
+        // Update transaction hash
+        const updatedTransaction = updateTransactionStatus(txId, 'completed', hash);
+        
+        // If this is a selling order transaction, update its order
+        if (transaction.metadata?.orderId && transaction.metadata?.type === 'token_transfer') {
+          const orderId = transaction.metadata.orderId;
+          // Check if there's a selling order with this ID
+          const order = sellingOrders.get(orderId);
           
-          // If the transaction was for a selling order, update the order status too
-          try {
-            // Extract token address from transaction
-            const tokenAddress = updatedTx.to.toLowerCase();
-            
-            // Log for debugging
-            console.log(`Checking for selling orders with token address: ${tokenAddress}`);
-            
-            // Skip the actual updating for now as we don't have a direct link to orders
-          } catch (orderError) {
-            console.error('Error updating associated selling order:', orderError);
+          if (order) {
+            // Update the order's transaction hash
+            const updatedOrder = {
+              ...order,
+              txHash: hash
+            };
+            sellingOrders.set(orderId, updatedOrder);
           }
         }
         
-        console.log(`✅ Transaction ${txId} updated: status=${status}, hash=${hash || 'N/A'}`);
-        
-        // Update any associated atomic swap records with the real transaction hash
-        updateAssociatedSwapRecords(txId, status, hash);
-        
-        return res.json({
-          success: true,
-          transaction: updatedTx
+        return res.json({ 
+          success: true, 
+          transaction: updatedTransaction 
         });
       } catch (error) {
-        console.error(`Error updating transaction:`, error);
-        return res.status(500).json({
-          success: false,
-          message: error instanceof Error ? error.message : 'Unknown server error'
+        console.error('Error updating transaction hash:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: error instanceof Error ? error.message : 'Unknown server error' 
         });
       }
     });
@@ -444,6 +487,51 @@ async function createServer() {
         });
       } catch (error) {
         console.error(`Error updating selling order:`, error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
+    // Activate a selling order after transaction confirmation
+    app.post("/api/selling-orders/:orderId/activate", (req, res) => {
+      try {
+        const { orderId } = req.params;
+        const { txHash } = req.body;
+        
+        if (!txHash) {
+          return res.status(400).json({
+            success: false,
+            message: 'Transaction hash is required'
+          });
+        }
+        
+        const order = sellingOrders.get(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        if (order.status !== 'pending') {
+          return res.status(400).json({
+            success: false,
+            message: `Order with ID ${orderId} is not in pending status`
+          });
+        }
+        
+        // Activate the order using the utility function
+        const activatedOrder = activateSellingOrder(orderId, txHash);
+        
+        return res.json({
+          success: true,
+          order: activatedOrder
+        });
+      } catch (error) {
+        console.error(`Error activating selling order:`, error);
         return res.status(500).json({
           success: false,
           message: error instanceof Error ? error.message : 'Unknown server error'
