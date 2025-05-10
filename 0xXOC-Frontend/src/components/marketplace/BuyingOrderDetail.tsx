@@ -322,19 +322,35 @@ export default function BuyingOrderDetail() {
             {order.txHash && (
               <>
                 <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
-                  Transaction Hash
+                  Transaction ID
                 </div>
                 <div className="text-mictlai-turquoise break-all font-mono mb-2">
                   {order.txHash}
                 </div>
-                <a 
-                  href={`https://basescan.org/tx/${order.txHash}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-block text-sm text-mictlai-gold hover:underline"
-                >
-                  VIEW ON BASESCAN →
-                </a>
+                
+                {/* Show blockchain transaction hash and BaseScan link if available */}
+                {order.onChainTxHash ? (
+                  <>
+                    <div className="text-mictlai-bone/70 font-pixel text-sm mb-1 mt-4">
+                      Blockchain Transaction Hash
+                    </div>
+                    <div className="text-mictlai-turquoise break-all font-mono mb-2">
+                      {order.onChainTxHash}
+                    </div>
+                    <a 
+                      href={`https://basescan.org/tx/${order.onChainTxHash}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-block text-sm text-mictlai-gold hover:underline"
+                    >
+                      VIEW ON BASESCAN →
+                    </a>
+                  </>
+                ) : (
+                  <div className="text-mictlai-bone/50 text-sm">
+                    Waiting for blockchain confirmation...
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -452,7 +468,7 @@ export default function BuyingOrderDetail() {
                     rel="noopener noreferrer"
                     className="text-mictlai-turquoise/50 hover:text-mictlai-turquoise"
                   >
-                    {order.onChainTxHash.substring(0, 10)}...
+                    {order.onChainTxHash.substring(0, 10)}...{order.onChainTxHash.substring(order.onChainTxHash.length - 8)}
                   </a>
                 </p>
               )}

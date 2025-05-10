@@ -11,6 +11,18 @@ export enum LogLevel {
   FATAL = 'fatal'
 }
 
+// Get the minimum log level from environment or use DEBUG for development
+const MIN_LOG_LEVEL = process.env.LOG_LEVEL || LogLevel.DEBUG;
+
+// Log level priority map (lower number = higher priority)
+const LOG_LEVEL_PRIORITY = {
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3,
+  [LogLevel.FATAL]: 4
+};
+
 // Log entry structure
 interface LogEntry {
   timestamp: string;
@@ -25,9 +37,21 @@ const MAX_LOG_ENTRIES = 1000;
 const recentLogs: LogEntry[] = [];
 
 /**
+ * Check if a log level should be displayed based on minimum level
+ */
+function shouldLog(level: LogLevel): boolean {
+  return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[MIN_LOG_LEVEL as LogLevel];
+}
+
+/**
  * Add a log entry to memory and console
  */
 function addLogEntry(level: LogLevel, message: string, module: string, data?: any): void {
+  // Skip if below minimum log level
+  if (!shouldLog(level)) {
+    return;
+  }
+
   const timestamp = new Date().toISOString();
   const entry: LogEntry = {
     timestamp,
