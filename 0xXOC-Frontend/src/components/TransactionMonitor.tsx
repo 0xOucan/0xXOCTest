@@ -171,7 +171,7 @@ export default function TransactionMonitor() {
       const currentTime = Date.now();
       const pendingTxs: PendingTransaction[] = [];
       const completedTxs: PendingTransaction[] = [];
-      
+        
       // Sort transactions into pending and completed
       transactions.forEach(tx => {
         if (tx.status === 'pending' || tx.status === 'submitted') {
@@ -193,18 +193,18 @@ export default function TransactionMonitor() {
       });
       
       // Update completed transactions state
-      setCompletedTransactions(prev => {
-        // Filter out expired completed transactions (older than KEEP_COMPLETED_FOR_MS)
-        const filteredPrev = prev.filter(tx => 
-          currentTime - (tx.timestamp || 0) < KEEP_COMPLETED_FOR_MS
-        );
-        
+        setCompletedTransactions(prev => {
+          // Filter out expired completed transactions (older than KEEP_COMPLETED_FOR_MS)
+          const filteredPrev = prev.filter(tx => 
+            currentTime - (tx.timestamp || 0) < KEEP_COMPLETED_FOR_MS
+          );
+          
         // Merge with new completed transactions, avoiding duplicates
         const existingIds = new Set(filteredPrev.map(tx => tx.id));
         const newCompletedTxs = completedTxs.filter(tx => !existingIds.has(tx.id));
         
-        return [...filteredPrev, ...newCompletedTxs];
-      });
+          return [...filteredPrev, ...newCompletedTxs];
+        });
       
       // Update pending transactions state
       setPendingTransactions(pendingTxs);

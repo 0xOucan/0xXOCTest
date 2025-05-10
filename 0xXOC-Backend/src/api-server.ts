@@ -303,9 +303,9 @@ async function createServer() {
         const transaction = getTransactionById(txId);
         
         if (!transaction) {
-          return res.status(404).json({ 
-            success: false, 
-            message: `Transaction with ID ${txId} not found` 
+          return res.status(404).json({
+            success: false,
+            message: `Transaction with ID ${txId} not found`
           });
         }
         
@@ -328,15 +328,15 @@ async function createServer() {
           }
         }
         
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           transaction: updatedTransaction 
         });
       } catch (error) {
         console.error('Error updating transaction hash:', error);
-        return res.status(500).json({ 
-          success: false, 
-          message: error instanceof Error ? error.message : 'Unknown server error' 
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
         });
       }
     });
