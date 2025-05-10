@@ -42,12 +42,10 @@ async function checkAndUpdateBuyingOrders() {
           
           // If transaction has a real hash, use it to update the order
           if (pendingTx.hash) {
-            updateBuyingOrderStatus(order.orderId, 'active', {
-              txHash: pendingTx.hash
-            });
-            console.log(`Updated order ${order.orderId} to active status`);
+            updateBuyingOrderStatus(order.orderId, 'active' as const, pendingTx.hash);
+            console.log(`Updated order ${order.orderId} to active status with hash ${pendingTx.hash}`);
           } else {
-            updateBuyingOrderStatus(order.orderId, 'active');
+            updateBuyingOrderStatus(order.orderId, 'active' as const);
             console.log(`Updated order ${order.orderId} to active status (no hash available)`);
           }
         }
@@ -55,9 +53,7 @@ async function checkAndUpdateBuyingOrders() {
         // If transaction is rejected or failed, update order status
         if (pendingTx && (['rejected', 'failed'].includes(pendingTx.status))) {
           console.log(`Order ${order.orderId} transaction failed or rejected`);
-          updateBuyingOrderStatus(order.orderId, 'cancelled', {
-            memo: order.memo ? `${order.memo} - Transaction failed` : 'Transaction failed'
-          });
+          updateBuyingOrderStatus(order.orderId, 'cancelled' as const);
           console.log(`Updated order ${order.orderId} to cancelled status due to failed transaction`);
         }
       } catch (error) {

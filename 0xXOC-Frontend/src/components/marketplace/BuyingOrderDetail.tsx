@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useWallet } from '../../providers/WalletContext';
-import { getBuyingOrderById, cancelBuyingOrder } from '../../services/marketplaceService';
+import { getBuyingOrderById, cancelBuyingOrder, decryptQrCode } from '../../services/marketplaceService';
 import { formatAddress, formatTimeAgo } from '../../utils/formatting';
 import { LoadingIcon } from '../Icons';
 import { useNotification, NotificationType } from '../../utils/notification';
+
+type DecryptionMethod = 'local' | 'blockchain' | 'auto';
 
 type BuyingOrder = {
   orderId: string;
@@ -21,6 +23,10 @@ type BuyingOrder = {
   txHash?: string;
   filledAt?: number;
   filledBy?: string;
+  // Encryption-related fields
+  encryptedQrData?: string;
+  publicUuid?: string;
+  onChainTxHash?: string;
 };
 
 export default function BuyingOrderDetail() {
@@ -32,6 +38,11 @@ export default function BuyingOrderDetail() {
   const [order, setOrder] = React.useState<BuyingOrder | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [isCancelling, setIsCancelling] = React.useState(false);
+  const [privateUuid, setPrivateUuid] = useState('');
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptedQRData, setDecryptedQRData] = useState<string | null>(null);
+  const [decryptionMethod, setDecryptionMethod] = useState<DecryptionMethod>('auto');
+  const [usedDecryptionMethod, setUsedDecryptionMethod] = useState<string | null>(null);
   
   // Fetch order details on component mount
   React.useEffect(() => {
@@ -91,6 +102,66 @@ export default function BuyingOrderDetail() {
     }
   };
   
+  // Handle QR code decryption
+  const handleDecryptQrCode = async () => {
+    if (!isConnected || !order) {
+      addNotification('Please connect your wallet first', NotificationType.WARNING);
+      return;
+    }
+    
+    if (!privateUuid) {
+      addNotification('Please enter your Private Access UUID', NotificationType.WARNING);
+      return;
+    }
+    
+    try {
+      setIsDecrypting(true);
+      setDecryptedQRData(null);
+      setUsedDecryptionMethod(null);
+      
+      // Append the decryption method as a parameter if not using auto
+      const forcedMethod = decryptionMethod === 'auto' ? '' : `&forceMethod=${decryptionMethod}`;
+      
+      // Call the API to decrypt the QR code
+      const result = await decryptQrCode({
+        orderId: order.orderId,
+        privateUuid,
+        forcedMethod: decryptionMethod !== 'auto' ? decryptionMethod : undefined
+      });
+      
+      // Check if there was an error
+      if (result.includes('❌ Error') || result.includes('❌ Failed')) {
+        throw new Error(result);
+      }
+      
+      // Extract the decryption method
+      const methodMatch = result.match(/\(using (\w+) storage\)/);
+      const resultMethod = methodMatch ? methodMatch[1] : 'unknown';
+      setUsedDecryptionMethod(resultMethod);
+      
+      // Extract the JSON from the result
+      const jsonMatch = result.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        setDecryptedQRData(jsonMatch[1]);
+        addNotification(
+          `QR code decrypted successfully (${resultMethod} storage)`,
+          NotificationType.SUCCESS
+        );
+      } else {
+        setDecryptedQRData(result);
+      }
+    } catch (error) {
+      console.error('Error decrypting QR code:', error);
+      addNotification(
+        'Failed to decrypt QR code',
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Incorrect Private Access UUID or other error'
+      );
+    } finally {
+      setIsDecrypting(false);
+    }
+  };
+  
   // Get token emoji
   const getTokenEmoji = (token: string) => {
     switch (token) {
@@ -124,6 +195,9 @@ export default function BuyingOrderDetail() {
       default: return 'text-mictlai-bone';
     }
   };
+  
+  // Check if user is the owner
+  const isOwner = order && isConnected && order.buyer.toLowerCase() === connectedAddress?.toLowerCase();
   
   if (loading) {
     return (
@@ -182,7 +256,7 @@ export default function BuyingOrderDetail() {
           </div>
           
           {/* Cancel button (only for active orders by the connected user) */}
-          {order.status === 'active' && isConnected && order.buyer.toLowerCase() === connectedAddress?.toLowerCase() && (
+          {order.status === 'active' && isOwner && (
             <button
               onClick={handleCancelOrder}
               disabled={isCancelling}
@@ -266,73 +340,125 @@ export default function BuyingOrderDetail() {
           </div>
         </div>
         
-        {/* Timeline */}
-        <div className="bg-black/30 p-4 border-2 border-mictlai-gold/30">
-          <h4 className="text-mictlai-bone/70 font-pixel text-sm mb-3">ORDER TIMELINE</h4>
-          
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-4 h-4 bg-mictlai-gold rounded-full mt-1"></div>
-              <div>
-                <div className="text-mictlai-gold font-pixel">CREATED</div>
-                <div className="text-mictlai-bone text-sm">
-                  {new Date(order.createdAt).toLocaleString()}
-                </div>
+        {/* QR Code Decryption (only for the buyer) */}
+        {isOwner && order.encryptedQrData && order.publicUuid && (
+          <div className="bg-black/30 p-4 border-2 border-mictlai-gold/30 mt-6">
+            <h4 className="text-mictlai-bone/70 font-pixel text-sm mb-3">DECRYPT QR CODE DATA</h4>
+            <p className="text-mictlai-bone mb-3 text-sm">
+              Enter your Private Access UUID to decrypt the QR code data. Keep in mind that your Private Access UUID was shown to you when you created the order.
+            </p>
+            
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                type="text"
+                value={privateUuid}
+                onChange={(e) => setPrivateUuid(e.target.value)}
+                className="flex-1 bg-black border-2 border-mictlai-bone/30 text-mictlai-bone p-2 font-pixel focus:outline-none focus:border-mictlai-gold"
+                placeholder="Enter your Private Access UUID"
+              />
+            </div>
+            
+            {/* Decryption Method Selection */}
+            <div className="mb-4 border-2 border-mictlai-bone/20 p-3 bg-black/50">
+              <h5 className="text-mictlai-bone/70 font-pixel text-sm mb-2">SELECT DECRYPTION METHOD:</h5>
+              
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => setDecryptionMethod('auto')}
+                  className={`px-3 py-2 border-2 font-pixel text-sm ${
+                    decryptionMethod === 'auto'
+                      ? 'border-mictlai-turquoise bg-mictlai-turquoise/20 text-mictlai-turquoise'
+                      : 'border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-turquoise/50'
+                  }`}
+                >
+                  {decryptionMethod === 'auto' ? '✓ ' : ''}AUTO (TRY BOTH)
+                </button>
+                
+                <button
+                  onClick={() => setDecryptionMethod('local')}
+                  className={`px-3 py-2 border-2 font-pixel text-sm ${
+                    decryptionMethod === 'local'
+                      ? 'border-mictlai-turquoise bg-mictlai-turquoise/20 text-mictlai-turquoise'
+                      : 'border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-turquoise/50'
+                  }`}
+                  disabled={!order.encryptedQrData}
+                  title={!order.encryptedQrData ? 'No local data available' : 'Use locally stored encrypted data'}
+                >
+                  {decryptionMethod === 'local' ? '✓ ' : ''}LOCAL STORAGE
+                </button>
+                
+                <button
+                  onClick={() => setDecryptionMethod('blockchain')}
+                  className={`px-3 py-2 border-2 font-pixel text-sm ${
+                    decryptionMethod === 'blockchain'
+                      ? 'border-mictlai-turquoise bg-mictlai-turquoise/20 text-mictlai-turquoise'
+                      : 'border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-turquoise/50'
+                  }`}
+                  disabled={!order.onChainTxHash}
+                  title={!order.onChainTxHash ? 'No blockchain transaction hash available' : 'Decrypt directly from blockchain data'}
+                >
+                  {decryptionMethod === 'blockchain' ? '✓ ' : ''}BLOCKCHAIN
+                  {!order.onChainTxHash && <span className="text-mictlai-blood ml-1">(unavailable)</span>}
+                </button>
+              </div>
+              
+              {/* Details about selected method */}
+              <div className="mt-2 text-xs text-mictlai-bone/60">
+                {decryptionMethod === 'auto' && 'Will try local storage first, then blockchain if needed.'}
+                {decryptionMethod === 'local' && 'Uses cached encrypted data for faster decryption.'}
+                {decryptionMethod === 'blockchain' && 'Retrieves and decrypts data directly from the blockchain transaction.'}
               </div>
             </div>
             
-            <div className="flex items-start gap-3">
-              <div className="w-4 h-4 bg-mictlai-blood rounded-full mt-1"></div>
-              <div>
-                <div className="text-mictlai-blood font-pixel">EXPIRES</div>
-                <div className="text-mictlai-bone text-sm">
-                  {new Date(order.expiresAt).toLocaleString()}
-                </div>
+            <button
+              onClick={handleDecryptQrCode}
+              disabled={isDecrypting || !privateUuid}
+              className={`px-4 py-2 font-pixel text-black ${
+                isDecrypting || !privateUuid
+                  ? 'bg-mictlai-gold/30 cursor-not-allowed'
+                  : 'bg-mictlai-gold hover:bg-mictlai-gold/80'
+              } transition-colors flex items-center justify-center gap-2 w-full`}
+            >
+              {isDecrypting ? (
+                <>
+                  <LoadingIcon className="w-4 h-4" />
+                  DECRYPTING...
+                </>
+              ) : (
+                `DECRYPT USING ${decryptionMethod.toUpperCase() === 'AUTO' ? 'AUTO DETECTION' : decryptionMethod.toUpperCase()}`
+              )}
+            </button>
+            
+            {decryptedQRData && (
+              <div className="mt-4">
+                <h5 className="text-mictlai-turquoise font-pixel text-sm mb-2">
+                  DECRYPTED QR CODE DATA {usedDecryptionMethod && `(USING ${usedDecryptionMethod.toUpperCase()} STORAGE)`}:
+                </h5>
+                <pre className="bg-black p-3 border border-mictlai-turquoise/50 text-mictlai-bone overflow-x-auto text-xs font-mono">
+                  {decryptedQRData}
+                </pre>
               </div>
+            )}
+            
+            <div className="mt-3">
+              <p className="text-mictlai-bone/50 text-xs">
+                Public UUID: {order.publicUuid}
+              </p>
+              {order.onChainTxHash && (
+                <p className="text-mictlai-bone/50 text-xs">
+                  Transaction Hash: <a 
+                    href={`https://basescan.org/tx/${order.onChainTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-mictlai-turquoise/50 hover:text-mictlai-turquoise"
+                  >
+                    {order.onChainTxHash.substring(0, 10)}...
+                  </a>
+                </p>
+              )}
             </div>
-            
-            {order.status === 'filled' && order.filledAt && (
-              <div className="flex items-start gap-3">
-                <div className="w-4 h-4 bg-green-500 rounded-full mt-1"></div>
-                <div>
-                  <div className="text-green-500 font-pixel">FILLED</div>
-                  <div className="text-mictlai-bone text-sm">
-                    {new Date(order.filledAt).toLocaleString()}
-                  </div>
-                  {order.filledBy && (
-                    <div className="text-mictlai-bone/70 text-xs mt-1">
-                      Filled by: {formatAddress(order.filledBy, 6, 4)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {order.status === 'cancelled' && (
-              <div className="flex items-start gap-3">
-                <div className="w-4 h-4 bg-mictlai-blood rounded-full mt-1"></div>
-                <div>
-                  <div className="text-mictlai-blood font-pixel">CANCELLED</div>
-                  <div className="text-mictlai-bone text-sm">
-                    Order was cancelled by the buyer
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {order.status === 'expired' && (
-              <div className="flex items-start gap-3">
-                <div className="w-4 h-4 bg-mictlai-bone/50 rounded-full mt-1"></div>
-                <div>
-                  <div className="text-mictlai-bone/50 font-pixel">EXPIRED</div>
-                  <div className="text-mictlai-bone text-sm">
-                    Order has expired
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

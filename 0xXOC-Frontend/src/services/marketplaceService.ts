@@ -44,6 +44,9 @@ export interface BuyingOrder {
   filledAt?: number;
   filledBy?: string;
   txHash?: string;
+  encryptedQrData?: string;
+  publicUuid?: string;
+  onChainTxHash?: string;
 }
 
 export interface CreateBuyingOrderParams {
@@ -51,6 +54,12 @@ export interface CreateBuyingOrderParams {
   token: 'XOC' | 'MXNe' | 'USDC';
   tokenAmount: string;
   memo?: string;
+}
+
+export interface DecryptQRCodeParams {
+  orderId: string;
+  privateUuid: string;
+  forcedMethod?: 'local' | 'blockchain';
 }
 
 // Selling Order API Calls
@@ -294,6 +303,28 @@ export const cancelBuyingOrder = async (orderId: string): Promise<string> => {
     return response.message || response.rawResponse || 'Order cancellation command sent';
   } catch (error) {
     console.error(`Error cancelling buying order ${orderId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Decrypt QR code data using the private UUID
+ */
+export const decryptQrCode = async (params: DecryptQRCodeParams): Promise<string> => {
+  try {
+    // Format the command for the AI agent
+    let message = `decrypt_qr_code orderId=${params.orderId} privateUuid=${params.privateUuid}`;
+    
+    // Add forced method parameter if specified
+    if (params.forcedMethod) {
+      message += ` forceMethod=${params.forcedMethod}`;
+    }
+    
+    // Use the agent service to send the command
+    const response = await sendChatMessage(message);
+    return response.message || response.rawResponse || 'QR code decryption command sent';
+  } catch (error) {
+    console.error('Error decrypting QR code:', error);
     throw error;
   }
 };
