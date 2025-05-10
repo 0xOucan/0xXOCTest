@@ -98,7 +98,7 @@ export default function OrdersDisplay() {
           createdAt: Date.now() - 3600000, // 1 hour ago
           expiresAt: Date.now() + 86400000 * 7, // 7 days from now
           referenceCode: 'OXXO9876543210',
-          qrExpiration: '31/12/23 23:59:59',
+          qrExpiration: '25/12/31 23:59:59',
           memo: 'Mock XOC buying order - 100 MXN for 100 XOC'
         },
         {
@@ -111,7 +111,7 @@ export default function OrdersDisplay() {
           createdAt: Date.now() - 7200000, // 2 hours ago
           expiresAt: Date.now() + 86400000 * 7, // 7 days from now
           referenceCode: 'OXXO8765432109',
-          qrExpiration: '31/12/23 23:59:59',
+          qrExpiration: '25/11/30 23:59:59',
           memo: 'Mock MXNe buying order - 200 MXN for 200 MXNe'
         },
         {
@@ -124,7 +124,7 @@ export default function OrdersDisplay() {
           createdAt: Date.now() - 10800000, // 3 hours ago
           expiresAt: Date.now() + 86400000 * 7, // 7 days from now
           referenceCode: 'OXXO7654321098',
-          qrExpiration: '31/12/23 23:59:59',
+          qrExpiration: '25/10/31 23:59:59',
           memo: 'Mock USDC buying order - 100 MXN for 5 USDC'
         }
       ];

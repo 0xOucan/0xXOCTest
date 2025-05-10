@@ -8,19 +8,19 @@ import { LoadingIcon } from '../Icons';
 const exampleQrCodes = [
   {
     amount: 100, // 100 MXN
-    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"24/12/31 23:59:59","FechaCreacionQR":"24/12/15 14:30:25","EmisorQR":"101","Monto":100,"Concepto":"","Operacion":{"Mensaje":"","CR":"1011499855001003","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
+    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"25/12/31 23:59:59","FechaCreacionQR":"25/05/15 14:30:25","EmisorQR":"101","Monto":100,"Concepto":"","Operacion":{"Mensaje":"","CR":"1011499855001003","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
   },
   {
     amount: 200, // 200 MXN
-    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"24/12/31 23:59:59","FechaCreacionQR":"24/12/15 15:20:33","EmisorQR":"101","Monto":200,"Concepto":"","Operacion":{"Mensaje":"","CR":"1012599855002005","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
+    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"26/01/15 23:59:59","FechaCreacionQR":"25/05/15 15:20:33","EmisorQR":"101","Monto":200,"Concepto":"","Operacion":{"Mensaje":"","CR":"1012599855002005","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
   },
   {
     amount: 400, // 400 MXN
-    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"24/12/31 23:59:59","FechaCreacionQR":"24/12/15 16:10:45","EmisorQR":"101","Monto":400,"Concepto":"","Operacion":{"Mensaje":"","CR":"1018899255004007","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
+    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"25/09/30 23:59:59","FechaCreacionQR":"25/05/15 16:10:45","EmisorQR":"101","Monto":400,"Concepto":"","Operacion":{"Mensaje":"","CR":"1018899255004007","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
   },
   {
     amount: 1000, // 1000 MXN
-    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"24/12/31 23:59:59","FechaCreacionQR":"24/12/15 17:05:12","EmisorQR":"101","Monto":1000,"Concepto":"","Operacion":{"Mensaje":"","CR":"1019999855010009","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
+    data: `{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"25/10/31 23:59:59","FechaCreacionQR":"25/05/15 17:05:12","EmisorQR":"101","Monto":1000,"Concepto":"","Operacion":{"Mensaje":"","CR":"1019999855010009","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}`
   }
 ];
 
@@ -160,7 +160,7 @@ export default function CreateBuyingOrder() {
               value={qrCodeData}
               onChange={(e) => setQrCodeData(e.target.value)}
               className="w-full bg-black border-2 border-mictlai-bone/30 text-mictlai-bone p-2 font-mono text-sm focus:outline-none focus:border-mictlai-gold h-32"
-              placeholder='{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"24/12/31 23:59:59","FechaCreacionQR":"24/12/15 14:30:25","EmisorQR":"101","Monto":100,"Concepto":"","Operacion":{"Mensaje":"","CR":"1011499855001003","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}'
+              placeholder='{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"25/12/31 23:59:59","FechaCreacionQR":"25/05/15 14:30:25","EmisorQR":"101","Monto":100,"Concepto":"","Operacion":{"Mensaje":"","CR":"1011499855001003","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}'
               required
             />
             

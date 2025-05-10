@@ -373,7 +373,7 @@ export const getMockBuyingOrders = (): BuyingOrder[] => {
       createdAt: Date.now() - 3600000, // 1 hour ago
       expiresAt: Date.now() + 86400000 * 7, // 7 days from now
       referenceCode: 'OXXO1234567890',
-      qrExpiration: '30/12/23 23:59:59'
+      qrExpiration: '25/12/31 23:59:59'
     },
     {
       orderId: 'buyorder-1678912345-2345',
@@ -385,7 +385,7 @@ export const getMockBuyingOrders = (): BuyingOrder[] => {
       createdAt: Date.now() - 86400000, // 1 day ago
       expiresAt: Date.now() + 86400000 * 6, // 6 days from now
       referenceCode: 'OXXO2345678901',
-      qrExpiration: '29/12/23 23:59:59'
+      qrExpiration: '25/11/30 23:59:59'
     },
     {
       orderId: 'buyorder-1678912345-3456',
@@ -397,7 +397,7 @@ export const getMockBuyingOrders = (): BuyingOrder[] => {
       createdAt: Date.now() - 86400000 * 2, // 2 days ago
       expiresAt: Date.now() + 86400000 * 5, // 5 days from now
       referenceCode: 'OXXO3456789012',
-      qrExpiration: '28/12/23 23:59:59'
+      qrExpiration: '25/10/31 23:59:59'
     },
     {
       orderId: 'buyorder-1678912345-4567',
@@ -409,7 +409,7 @@ export const getMockBuyingOrders = (): BuyingOrder[] => {
       createdAt: Date.now() - 86400000 * 3, // 3 days ago
       expiresAt: Date.now() + 86400000 * 4, // 4 days from now
       referenceCode: 'OXXO4567890123',
-      qrExpiration: '27/12/23 23:59:59',
+      qrExpiration: '25/09/30 23:59:59',
       filledAt: Date.now() - 86400000, // 1 day ago
       filledBy: '0x8901234567890123456789012345678901234567',
       txHash: '0xef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd'
@@ -424,7 +424,7 @@ export const getMockBuyingOrders = (): BuyingOrder[] => {
       createdAt: Date.now() - 86400000 * 4, // 4 days ago
       expiresAt: Date.now() - 86400000, // 1 day ago
       referenceCode: 'OXXO5678901234',
-      qrExpiration: '26/12/23 23:59:59'
+      qrExpiration: '25/08/31 23:59:59'
     }
   ];
 }; 
