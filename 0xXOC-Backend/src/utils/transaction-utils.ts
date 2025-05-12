@@ -202,24 +202,48 @@ export const createPendingTransaction = (
  * Update the status of a pending transaction
  * 
  * @param txId Transaction ID
- * @param status New status
- * @param txHash Optional transaction hash (for completed transactions)
- * @returns Updated transaction or undefined if not found
+ * @param status New transaction status
+ * @param txHash Optional transaction hash (only for signed or completed transactions)
+ * @returns Updated transaction object or undefined if not found
  */
 export function updateTransactionStatus(
   txId: string, 
   status: 'pending' | 'signed' | 'rejected' | 'completed',
   txHash?: string
 ): PendingTransaction | undefined {
-  const index = pendingTransactions.findIndex(tx => tx.id === txId);
-  if (index === -1) return undefined;
+  const txIndex = pendingTransactions.findIndex(tx => tx.id === txId || (txHash && tx.hash === txHash));
   
-  pendingTransactions[index].status = status;
-  if (txHash) {
-    pendingTransactions[index].hash = txHash;
+  if (txIndex === -1) {
+    console.error(`❌ Transaction with ID ${txId} not found for status update to ${status}`);
+    return undefined;
   }
   
-  return pendingTransactions[index];
+  const oldStatus = pendingTransactions[txIndex].status;
+  
+  console.log(`🔄 Updating transaction ${txId} status from ${oldStatus} to ${status}${txHash ? ` with hash ${txHash}` : ''}`);
+  
+  // Update the transaction status
+  pendingTransactions[txIndex].status = status;
+  
+  // If hash is provided and transaction is signed or completed, update the hash
+  if (txHash && (status === 'signed' || status === 'completed')) {
+    pendingTransactions[txIndex].hash = txHash;
+  }
+  
+  // Get metadata for logging
+  const metadata = pendingTransactions[txIndex].metadata || {};
+  const type = metadata && 'type' in metadata ? metadata.type as string : 'unknown';
+  const orderId = metadata && 'orderId' in metadata ? metadata.orderId as string : undefined;
+  
+  console.log(`✅ Transaction ${txId} updated to ${status} status${
+    txHash ? ` with hash ${txHash}` : ''
+  }${
+    type !== 'unknown' ? ` (${type})` : ''
+  }${
+    orderId ? ` for order ${orderId}` : ''
+  }`);
+  
+  return pendingTransactions[txIndex];
 }
 
 /**

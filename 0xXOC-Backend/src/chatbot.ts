@@ -26,6 +26,7 @@ import { cUSDescrowforiAmigoP2PActionProvider } from "./action-providers/cUSDesc
 import { basicAtomicSwapActionProvider } from "./action-providers/basic-atomic-swaps";
 import { tokenSellingOrderActionProvider } from "./action-providers/token-selling-order";
 import { tokenBuyingOrderActionProvider } from "./action-providers/token-buying-order";
+import { tokenBuyingOrderFillerActionProvider } from "./action-providers/token-buying-order-filler";
 import { createPendingTransaction, pendingTransactions } from "./utils/transaction-utils";
 import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
 
@@ -292,6 +293,7 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
         ...(selectedNetwork === "base" ? [
           tokenSellingOrderActionProvider(),
           tokenBuyingOrderActionProvider(),
+          tokenBuyingOrderFillerActionProvider(),
         ] : []),
       ],
     });

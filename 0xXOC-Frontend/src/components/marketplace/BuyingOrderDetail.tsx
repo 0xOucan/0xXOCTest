@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useWallet } from '../../providers/WalletContext';
-import { getBuyingOrderById, cancelBuyingOrder, decryptQrCode, downloadBuyingOrderImage } from '../../services/marketplaceService';
+import { 
+  getBuyingOrderById, 
+  cancelBuyingOrder, 
+  decryptQrCode, 
+  downloadBuyingOrderImage,
+  fillBuyingOrder,
+  checkFilledOrderStatus,
+  requestQRCodeDownload
+} from '../../services/marketplaceService';
 import { formatAddress, formatTimeAgo } from '../../utils/formatting';
 import { LoadingIcon } from '../Icons';
 import { useNotification, NotificationType } from '../../utils/notification';
@@ -40,7 +48,7 @@ export default function BuyingOrderDetail() {
   const { addNotification } = useNotification();
   
   const [order, setOrder] = React.useState<BuyingOrder | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [isCancelling, setIsCancelling] = React.useState(false);
   const [privateUuid, setPrivateUuid] = useState('');
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -51,33 +59,72 @@ export default function BuyingOrderDetail() {
   const [decryptedData, setDecryptedData] = useState<any>(null);
   const [imageDownloaded, setImageDownloaded] = useState<boolean>(false);
   const [decryptionError, setDecryptionError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [downloadTimeRemaining, setDownloadTimeRemaining] = useState<number>(0);
   const [hasImage, setHasImage] = useState<boolean>(false);
+  const [isFilling, setIsFilling] = useState<boolean>(false);
+  const [fillerQRDownloadUrl, setFillerQRDownloadUrl] = useState<string | null>(null);
+  const [isCheckingFilledStatus, setIsCheckingFilledStatus] = useState<boolean>(false);
+  const [isFilledByCurrentUser, setIsFilledByCurrentUser] = useState<boolean>(false);
+  
+  // Fetch order details
+  const fetchOrderDetails = async () => {
+    if (!orderId) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const orderData = await getBuyingOrderById(orderId);
+      
+      if (orderData) {
+        setOrder(orderData);
+        
+        // Check if the order has an image available
+        setHasImage(!!orderData.imageFileId && !!orderData.imageFileExt);
+        
+        // If the order is filled and the user is connected, check if they filled it
+        if (orderData.status === 'filled' && isConnected) {
+          checkFilledStatus();
+        }
+      } else {
+        setOrder(null);
+      }
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      addNotification(
+        'Failed to fetch order details',
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      setOrder(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Fetch order details on component mount
-  React.useEffect(() => {
-    const fetchOrderDetails = async () => {
-      if (!orderId) return;
-      
-      try {
-        setLoading(true);
-        const orderData = await getBuyingOrderById(orderId);
-        setOrder(orderData);
-      } catch (error) {
-        console.error('Error fetching order details:', error);
-        addNotification(
-          'Failed to fetch order details',
-          NotificationType.ERROR,
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    
+  useEffect(() => {
     fetchOrderDetails();
-  }, [orderId]);
+  }, [orderId, isConnected]);
+  
+  // When the component mounts or order changes, check if it's a filled order
+  useEffect(() => {
+    if (order && order.status === 'filled' && isConnected) {
+      checkFilledStatus();
+    }
+  }, [order, isConnected]);
+  
+  // Check for QR download request flag on component mount
+  useEffect(() => {
+    const hasDownloadRequest = localStorage.getItem('qrDownloadRequested');
+    
+    if (hasDownloadRequest === 'true') {
+      // Clear the flag
+      localStorage.removeItem('qrDownloadRequested');
+      
+      // Refresh page data
+      fetchOrderDetails();
+    }
+  }, []);
   
   // When the component mounts or the order changes, check if already decrypted
   useEffect(() => {
@@ -122,6 +169,36 @@ export default function BuyingOrderDetail() {
       return () => clearTimeout(timer);
     }
   }, [downloadTimeRemaining]);
+  
+  // Refresh order details periodically if in a relevant state
+  useEffect(() => {
+    // Initial check for filled status
+    if (isConnected && order?.status === 'filled') {
+      checkFilledStatus();
+    }
+    
+    // If order is filled by current user, we don't need to refresh
+    if (isFilledByCurrentUser) return;
+    
+    // If order is in active status and user submitted a fill, check more frequently
+    const shouldCheckOften = order?.status === 'active' || isFilling;
+    
+    // Don't refresh if in certain states
+    if (['cancelled', 'expired'].includes(order?.status || '') && !isFilling) {
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      fetchOrderDetails();
+      
+      // Also check the filled status if the order is in filled state
+      if (order?.status === 'filled' && isConnected) {
+        checkFilledStatus();
+      }
+    }, shouldCheckOften ? 5000 : 15000); // Check every 5 seconds if pending fill, otherwise every 15 seconds
+    
+    return () => clearInterval(interval);
+  }, [order?.status, isConnected, isFilling, isFilledByCurrentUser]);
   
   // Handle order cancellation
   const handleCancelOrder = async () => {
@@ -237,24 +314,36 @@ export default function BuyingOrderDetail() {
   
   // Handle image download
   const handleImageDownload = async () => {
-    if (!order) return;
+    if (!order || isLoading) return;
+    
+    setIsLoading(true);
     
     try {
-      setIsLoading(true);
-      await downloadBuyingOrderImage(order.orderId);
+      const response = await downloadBuyingOrderImage(order.orderId);
       
-      // Start countdown timer for 60 seconds
-      setDownloadTimeRemaining(60);
-      
-      addNotification(
-        'Image download started',
-        NotificationType.SUCCESS,
-        'The image will be available for download for 60 seconds. If you need to download again, please do so quickly.'
-      );
+      if (response && response.imageUrl) {
+        // Create a temporary hidden link to trigger download
+        const link = document.createElement('a');
+        link.href = response.imageUrl;
+        link.download = `qr-code-${order.orderId}.${order.imageFileExt || 'png'}`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setImageDownloaded(true);
+        addNotification(
+          'QR code image downloaded successfully',
+          NotificationType.SUCCESS,
+          'The QR code image has been downloaded to your device.'
+        );
+      } else {
+        throw new Error('Failed to get image download URL');
+      }
     } catch (error) {
       console.error('Error downloading image:', error);
       addNotification(
-        'Failed to download image',
+        'Failed to download QR code image',
         NotificationType.ERROR,
         error instanceof Error ? error.message : 'Unknown error'
       );
@@ -355,7 +444,149 @@ export default function BuyingOrderDetail() {
   // Check if user is the owner
   const isOwner = order && isConnected && order.buyer.toLowerCase() === connectedAddress?.toLowerCase();
   
-  if (loading) {
+  // Handle filling a buying order
+  const handleFillOrder = async () => {
+    if (!order || isFilling || order.status !== 'active') return;
+    
+    // Confirm before proceeding
+    if (!window.confirm(`Are you sure you want to fill this order? You will need to send ${order.tokenAmount} ${order.token} to the escrow wallet.`)) {
+      return;
+    }
+    
+    setIsFilling(true);
+    
+    try {
+      addNotification(
+        'Preparing to fill order',
+        NotificationType.INFO,
+        'Please wait while we prepare the transaction.'
+      );
+
+      const result = await fillBuyingOrder(order.orderId);
+      
+      addNotification(
+        'Order fill request sent',
+        NotificationType.SUCCESS,
+        'Your wallet will prompt you to approve the transaction. Please check your wallet.'
+      );
+      
+      // Check if the response contains "Transaction created"
+      if (result && typeof result === 'string' && result.includes('Transaction created')) {
+        addNotification(
+          'Wallet signature required',
+          NotificationType.INFO,
+          'Please sign the transaction in your wallet to complete the fill order process'
+        );
+      }
+      
+      // Refresh the order after a delay to show updated status
+      setTimeout(() => {
+        fetchOrderDetails();
+      }, 3000);
+    } catch (error) {
+      console.error('Error filling order:', error);
+      addNotification(
+        'Failed to fill order',
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    } finally {
+      setIsFilling(false);
+    }
+  };
+  
+  // Check if current user has filled this order
+  const checkFilledStatus = async () => {
+    if (!order || isCheckingFilledStatus || !connectedAddress) return;
+    
+    setIsCheckingFilledStatus(true);
+    
+    try {
+      // First check if the filled address matches the current user's address directly
+      if (order.status === 'filled' && order.filledBy && 
+          order.filledBy.toLowerCase() === connectedAddress.toLowerCase()) {
+        setIsFilledByCurrentUser(true);
+        return;
+      }
+      
+      // If not a direct match, check with the backend
+      const result = await checkFilledOrderStatus(order.orderId);
+      
+      // Parse the result to see if this user has filled the order
+      // We're looking for text that indicates this order was filled by a different address
+      const filledByDifferentUser = result?.includes('filled by a different address');
+      
+      if (result && !filledByDifferentUser && order.status === 'filled') {
+        setIsFilledByCurrentUser(true);
+      } else {
+        setIsFilledByCurrentUser(false);
+      }
+    } catch (error) {
+      console.error('Error checking filled status:', error);
+    } finally {
+      setIsCheckingFilledStatus(false);
+    }
+  };
+  
+  // Request QR code download (for fillers)
+  const handleRequestQRDownload = async () => {
+    if (!order || !isFilledByCurrentUser) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const downloadUrl = await requestQRCodeDownload(order.orderId);
+      
+      // Check if we got a direct download URL
+      if (typeof downloadUrl === 'string' && downloadUrl.startsWith('/api/')) {
+        // Set the full URL
+        const fullUrl = `${import.meta.env.VITE_API_URL || ''}${downloadUrl}`;
+        setFillerQRDownloadUrl(fullUrl);
+        
+        // Show success notification
+        addNotification(
+          'QR code ready for download',
+          NotificationType.SUCCESS,
+          'The QR code is ready for download. Click the download button to get your file.'
+        );
+        
+        // Automatically trigger download
+        window.open(fullUrl, '_blank');
+      } else {
+        // The API didn't return a download URL directly
+        addNotification(
+          'QR code download requested',
+          NotificationType.INFO,
+          'The QR code download has been requested. Please refresh the page in a few moments to download it.'
+        );
+        
+        // Refresh order details
+        await fetchOrderDetails();
+      }
+    } catch (error) {
+      console.error('Error requesting QR download:', error);
+      addNotification(
+        'Failed to request QR code download',
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle direct QR download for filler
+  const handleFillerQRDownload = () => {
+    if (!fillerQRDownloadUrl) return;
+    
+    // Navigate to the download URL
+    window.location.href = fillerQRDownloadUrl;
+    
+    // Set a flag to refresh the page after return
+    localStorage.setItem('qrDownloadRequested', 'true');
+  };
+  
+  if (isLoading) {
     return (
       <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg p-8 flex justify-center items-center">
         <LoadingIcon className="w-10 h-10 text-mictlai-gold" />
@@ -382,7 +613,7 @@ export default function BuyingOrderDetail() {
   
   return (
     <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg">
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
+      <div className="p-4 bg-black border-b-3 border-mictlai-gold shadow-pixel-lg flex justify-between items-center">
         <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
           BUYING ORDER DETAILS
         </h2>
@@ -724,6 +955,103 @@ export default function BuyingOrderDetail() {
             </div>
           )}
         </div>
+        
+        {/* Actions Buttons */}
+        <div className="flex flex-col md:flex-row gap-4 mt-8">
+          {/* Cancel Order button (only for owner) */}
+          {isOwner && order.status === 'active' && (
+            <button
+              onClick={handleCancelOrder}
+              disabled={isCancelling}
+              className={`px-6 py-3 border ${
+                isCancelling
+                  ? 'bg-mictlai-bone/20 cursor-wait border-mictlai-bone/30'
+                  : 'bg-mictlai-bone/10 hover:bg-mictlai-bone/30 border-mictlai-bone/50'
+              } font-pixel text-mictlai-bone flex items-center justify-center`}
+            >
+              {isCancelling ? (
+                <>
+                  <LoadingIcon className="w-5 h-5 mr-2" />
+                  CANCELLING...
+                </>
+              ) : (
+                'CANCEL ORDER'
+              )}
+            </button>
+          )}
+          
+          {/* Fill Order button (only shown to non-owners for active orders) */}
+          {!isOwner && order.status === 'active' && isConnected && (
+            <button
+              onClick={handleFillOrder}
+              disabled={isFilling}
+              className="mt-4 w-full border-3 border-mictlai-turquoise py-2 font-pixel text-mictlai-turquoise hover:bg-mictlai-turquoise/20 focus:bg-mictlai-turquoise/30 shadow-pixel disabled:border-mictlai-bone/30 disabled:text-mictlai-bone/30 disabled:hover:bg-transparent transition-all"
+            >
+              {isFilling ? (
+                <div className="flex items-center justify-center">
+                  <LoadingIcon className="animate-spin h-5 w-5 mr-2" />
+                  <span>PROCESSING...</span>
+                </div>
+              ) : (
+                'FILL ORDER'
+              )}
+            </button>
+          )}
+          
+          {/* Back button */}
+          <button
+            onClick={() => navigate('/marketplace')}
+            className="px-6 py-3 bg-transparent border border-mictlai-bone/30 hover:bg-mictlai-bone/10 font-pixel text-mictlai-bone"
+          >
+            BACK TO MARKETPLACE
+          </button>
+        </div>
+        
+        {/* Filler section - Show if user has filled this order */}
+        {order?.status === 'filled' && isFilledByCurrentUser && (
+          <div className="mt-8 border-t-2 border-mictlai-gold/30 pt-6">
+            <h3 className="text-mictlai-turquoise font-pixel text-xl mb-4">FILLED ORDER ACTIONS</h3>
+            
+            <div className="bg-black/30 p-4 border border-mictlai-gold/50">
+              <p className="text-mictlai-bone mb-4">
+                You've successfully filled this order. You can now download the OXXO Spin QR code to collect your payment.
+              </p>
+              
+              {fillerQRDownloadUrl ? (
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleFillerQRDownload}
+                    className="px-4 py-2 bg-mictlai-gold hover:bg-mictlai-gold/80 text-black font-pixel flex items-center justify-center"
+                  >
+                    DOWNLOAD QR CODE
+                  </button>
+                  <p className="text-sm text-mictlai-bone/60">
+                    This download link will expire in 5 minutes for security reasons.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={handleRequestQRDownload}
+                  disabled={isLoading}
+                  className={`px-4 py-2 ${
+                    isLoading
+                      ? 'bg-mictlai-gold/30 cursor-wait'
+                      : 'bg-mictlai-gold hover:bg-mictlai-gold/80'
+                  } text-black font-pixel flex items-center justify-center`}
+                >
+                  {isLoading ? (
+                    <>
+                      <LoadingIcon className="w-4 h-4 mr-2" />
+                      PREPARING QR CODE...
+                    </>
+                  ) : (
+                    'REQUEST QR CODE DOWNLOAD'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

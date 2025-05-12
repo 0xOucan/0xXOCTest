@@ -18,6 +18,7 @@ import {
   updateBuyingOrderStatus 
 } from './action-providers/token-buying-order/utils';
 import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
+import { startTokenBuyingOrderFillerRelay } from "./services/token-buying-order-filler-relay";
 import multer from "multer";
 import { saveUploadedFile, getFileById, deleteFile } from "./utils/file-storage";
 import path from "path";
@@ -138,6 +139,9 @@ async function createServer() {
     
     // Start the token buying order relay service
     const stopTokenBuyingOrderRelay = startTokenBuyingOrderRelay();
+    
+    // Start the token buying order filler relay service
+    const stopTokenBuyingOrderFillerRelay = startTokenBuyingOrderFillerRelay();
     
     // Initialize the default agent cache
     agentCache["default-base"] = {
@@ -844,62 +848,179 @@ async function createServer() {
             order.imageFileExt
           );
           
-          // Set headers for download
-          console.log(`📤 Sending file: ${filename} (${buffer.length} bytes)`);
-          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-          res.setHeader('Content-Type', getMimeType(order.imageFileExt));
-          res.setHeader('Content-Length', buffer.length);
+          // Content type based on file extension
+          const contentType = getMimeType(order.imageFileExt);
           
-          // Send file
-          res.send(buffer);
+          // Set response headers
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Content-Disposition', `attachment; filename="qr-code-${orderId}${order.imageFileExt}"`);
           
-          // Don't delete the file immediately
-          // Instead, mark it for deletion after 60 seconds
-          console.log(`⏱️ Scheduling file deletion in 60 seconds: ${filePath}`);
-          
-          // Add a "downloadStarted" flag to the order
-          updateBuyingOrderStatus(
-            orderId,
-            order.status,
-            { 
-              downloadStarted: true
-            }
-          );
-          
-          setTimeout(async () => {
-            try {
-              // Delete the file after 60 seconds
-              console.log(`🗑️ Deleting file after delay: ${filePath}`);
-              await deleteFile(filePath);
-              
-              // Only remove the file references after successful deletion
-              console.log(`✏️ Updating order to remove file references after delay`);
-              updateBuyingOrderStatus(
-                orderId,
-                order.status,
-                { 
-                  imageFileId: undefined,
-                  imageFileExt: undefined,
-                  downloadStarted: undefined
-                }
-              );
-              
-              console.log(`✅ File cleanup complete for order ${orderId}`);
-            } catch (delayedError) {
-              console.error(`❌ Error in delayed file cleanup: ${delayedError.message}`);
-            }
-          }, 60000); // 60 seconds delay
-          
-          console.log(`✅ File download initiated for order ${orderId}`);
-        } catch (fileError) {
-          console.error(`❌ Error retrieving file: ${fileError.message}`);
-          return res.status(500).json({
+          // Return the file
+          console.log(`✅ Sending file: ${filename}`);
+          return res.send(buffer);
+        } catch (error) {
+          console.error(`❌ Error retrieving file: ${error instanceof Error ? error.message : String(error)}`);
+          return res.status(404).json({
             success: false,
-            message: `Error retrieving file: ${fileError.message}`
+            message: 'File not found'
           });
         }
       } catch (error) {
         console.error('Error downloading image:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
+    // Endpoint to request QR code download for a filled order
+    app.post("/api/buying-orders/:orderId/request-download", async (req, res) => {
+      try {
+        const { orderId } = req.params;
+        console.log(`🔄 Request for QR code download for order ${orderId}`);
+        
+        // Get order
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          console.error(`❌ Order not found: ${orderId}`);
+          return res.status(404).json({
+            success: false,
+            message: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        // Check if the order is filled
+        if (order.status !== 'filled') {
+          console.error(`❌ Order ${orderId} is not filled. Current status: ${order.status}`);
+          return res.status(400).json({
+            success: false,
+            message: `Order ${orderId} is not filled. Current status: ${order.status}`
+          });
+        }
+        
+        // Check if order has an associated image
+        if (!order.imageFileId || !order.imageFileExt) {
+          console.error(`❌ No image associated with order ${orderId}`);
+          return res.status(404).json({
+            success: false,
+            message: 'No image associated with this order'
+          });
+        }
+        
+        // Mark the QR code as ready for download
+        updateBuyingOrderStatus(
+          orderId,
+          'filled',
+          {
+            downloadStarted: true,
+            hasBeenDecrypted: true // Force decryption flag to true to allow download
+          }
+        );
+        
+        // Generate a download URL
+        const downloadUrl = `/api/buying-orders/${orderId}/download-image?t=${Date.now()}`;
+        
+        console.log(`✅ QR code download ready for order ${orderId}`);
+        return res.json({
+          success: true,
+          message: 'QR code download ready',
+          downloadUrl
+        });
+      } catch (error) {
+        console.error('Error requesting QR code download:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
+    // QR code image download endpoint
+    app.get("/api/order/:orderId/qr-image-download", async (req, res) => {
+      try {
+        const { orderId } = req.params;
+        const { expires, imageId } = req.query;
+        
+        // Validate required parameters
+        if (!orderId || !expires || !imageId) {
+          return res.status(400).json({
+            success: false,
+            message: 'Missing required parameters'
+          });
+        }
+        
+        // Check if the token has expired
+        const expirationTime = parseInt(expires as string, 10);
+        if (isNaN(expirationTime) || Date.now() > expirationTime) {
+          return res.status(403).json({
+            success: false,
+            message: 'Download link has expired'
+          });
+        }
+        
+        // Get the buying order
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: 'Order not found'
+          });
+        }
+        
+        // Check if the order has an image
+        if (!order.imageFileId || !order.imageFileExt) {
+          return res.status(404).json({
+            success: false,
+            message: 'No image associated with this order'
+          });
+        }
+        
+        // Verify that the image ID matches
+        if (order.imageFileId !== imageId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Invalid image ID'
+          });
+        }
+        
+        // Check if the order is filled
+        if (order.status !== 'filled') {
+          return res.status(403).json({
+            success: false,
+            message: 'Cannot download QR code for unfilled order'
+          });
+        }
+        
+        // Get the file
+        const file = getFileById(order.imageFileId);
+        
+        if (!file) {
+          return res.status(404).json({
+            success: false,
+            message: 'Image file not found'
+          });
+        }
+        
+        // Set content type based on file extension
+        const contentType = getMimeType(order.imageFileExt);
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="qr-code-${orderId}.${order.imageFileExt}"`);
+        
+        // Send the file
+        res.send(file.data);
+        
+        // Update the order to mark QR code as downloaded
+        updateBuyingOrderStatus(orderId, 'filled', {
+          qrCodeDownloaded: true,
+          qrCodeDownloadedAt: Date.now()
+        });
+        
+        console.log(`QR code for order ${orderId} downloaded successfully`);
+      } catch (error) {
+        console.error('Error downloading QR code image:', error);
         return res.status(500).json({
           success: false,
           message: error instanceof Error ? error.message : 'Unknown server error'
@@ -917,6 +1038,7 @@ async function createServer() {
         console.log('Shutting down API server...');
         if (stopTokenSellingOrderRelay) stopTokenSellingOrderRelay();
         if (stopTokenBuyingOrderRelay) stopTokenBuyingOrderRelay();
+        if (stopTokenBuyingOrderFillerRelay) stopTokenBuyingOrderFillerRelay();
         process.exit(0);
       });
       

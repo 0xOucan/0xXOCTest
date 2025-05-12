@@ -359,58 +359,27 @@ export const uploadBuyingOrderImage = async (orderId: string, imageFile: File): 
   }
 };
 
-/**
- * Download an image from a buying order
- * The image will be available for 60 seconds after the first download request
- * @returns Promise resolving to boolean indicating success
- */
-export const downloadBuyingOrderImage = async (orderId: string): Promise<boolean> => {
+// Download the buying order QR code image
+export const downloadBuyingOrderImage = async (orderId: string): Promise<{ imageUrl: string }> => {
   try {
-    console.log(`Attempting to download image for order ${orderId}`);
-    
-    // First check if the image is available and if QR code has been decrypted
     const response = await fetch(`${apiUrl}/api/buying-orders/${orderId}/download-image`, {
-      method: 'HEAD'
+      method: 'GET',
     });
     
     if (!response.ok) {
-      console.error(`Error checking image availability: ${response.status} ${response.statusText}`);
-      
-      // Parse the error message from the response if possible
-      let errorMessage = `Server error: ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        if (errorData && errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        // If we can't parse the error as JSON, use the default message
-      }
-      
-      if (response.status === 403) {
-        throw new Error('You must decrypt the QR code before downloading the image.');
-      } else if (response.status === 404) {
-        throw new Error('No image found for this order.');
-      } else {
-        throw new Error(errorMessage);
-      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to download image');
     }
     
-    // Create a hidden link and trigger the download
-    const link = document.createElement('a');
-    link.href = getBuyingOrderImageUrl(orderId);
-    link.download = `order-image-${orderId}.png`;
-    link.target = '_blank'; // Open in new tab to help with download reliability
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Get the blob from the response
+    const blob = await response.blob();
     
-    console.log(`Download triggered for order ${orderId}`);
+    // Create a URL for the blob
+    const imageUrl = URL.createObjectURL(blob);
     
-    // Return true to indicate download was initiated
-    return true;
+    return { imageUrl };
   } catch (error) {
-    console.error(`Error downloading image for order ${orderId}:`, error);
+    console.error('Error downloading buying order image:', error);
     throw error;
   }
 };
@@ -458,5 +427,80 @@ export const validateOxxoSpinQrData = (qrData: string): { isValid: boolean; data
   } catch (e) {
     console.error("Error validating OXXO Spin QR code data:", e);
     return { isValid: false };
+  }
+};
+
+// Function to send a fill order transaction
+export const fillBuyingOrder = async (orderId: string): Promise<any> => {
+  try {
+    // Format the command for the AI agent
+    const message = `fill_buying_order orderId=${orderId}`;
+    
+    // Use the agent service to send the command
+    const response = await sendChatMessage(message);
+    return response.message || response.rawResponse || 'Fill order command sent';
+  } catch (error) {
+    console.error(`Error filling buying order ${orderId}:`, error);
+    throw error;
+  }
+};
+
+// Function to check filled order status
+export const checkFilledOrderStatus = async (orderId: string): Promise<any> => {
+  try {
+    // API endpoint to check filled order status
+    const response = await fetch(`${apiUrl}/api/chatbot/message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: `check_filled_order_status orderId=${orderId}`,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to check filled order status');
+    }
+    
+    const data = await response.json();
+    return data.content;
+  } catch (error) {
+    console.error('Error checking filled order status:', error);
+    throw error;
+  }
+};
+
+// Function to request QR code download for a filled order
+export const requestQRCodeDownload = async (orderId: string): Promise<any> => {
+  try {
+    // Use the direct API endpoint instead of the chatbot messaging endpoint
+    const response = await fetch(`${apiUrl}/api/buying-orders/${orderId}/request-download`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderId
+      }),
+    });
+    
+    if (!response.ok) {
+      // Try to get JSON error if available
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to request QR code download');
+      } catch (jsonError) {
+        // If response is not JSON, use status text
+        throw new Error(`Failed to request QR code download: ${response.statusText}`);
+      }
+    }
+    
+    const data = await response.json();
+    return data.downloadUrl || data.message || 'QR code download requested';
+  } catch (error) {
+    console.error('Error requesting QR code download:', error);
+    throw error;
   }
 };
