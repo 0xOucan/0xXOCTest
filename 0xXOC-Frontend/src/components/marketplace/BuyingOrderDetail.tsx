@@ -53,6 +53,7 @@ export default function BuyingOrderDetail() {
   const [decryptionError, setDecryptionError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [downloadTimeRemaining, setDownloadTimeRemaining] = useState<number>(0);
+  const [hasImage, setHasImage] = useState<boolean>(false);
   
   // Fetch order details on component mount
   React.useEffect(() => {
@@ -91,6 +92,13 @@ export default function BuyingOrderDetail() {
       // If download has already been initiated but not completed
       if (order.downloadStarted) {
         setImageDownloaded(false);
+      }
+      
+      // If there is an image, show download section after decryption
+      if (order.imageFileId && order.imageFileExt) {
+        setHasImage(true);
+      } else {
+        setHasImage(false);
       }
     }
   }, [order]);
@@ -653,103 +661,66 @@ export default function BuyingOrderDetail() {
                 {order?.imageFileExt && <p>Image Ext: {order.imageFileExt}</p>}
               </div>
               
-              {order?.imageFileId && order?.imageFileExt && !imageDownloaded && isDecrypted && (
-                <div className="mt-4 p-4 bg-mictlai-gold/10 border-2 border-mictlai-gold/30">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="text-mictlai-gold font-pixel text-sm mb-2">IMAGE FILE AVAILABLE</h4>
-                      <p className="text-mictlai-bone/70 text-xs mb-2">
-                        This order has an associated QR code image that you can download.
-                        The image will be permanently deleted from the server after download.
-                      </p>
+              {/* Display the decryption result (QR data) */}
+              <div className="bg-black/30 mt-6 p-4 border-2 border-mictlai-gold/50">
+                <h3 className="text-mictlai-turquoise font-pixel text-lg mb-4">DECRYPTED QR CODE DATA</h3>
+                <div className="text-mictlai-bone bg-black p-3 font-mono text-sm border border-mictlai-gold/30 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                  {decryptedData ? JSON.stringify(decryptedData, null, 2) : decryptedQRData}
+                </div>
+                
+                {/* Image download section */}
+                {hasImage && (
+                  <div className="mt-6 border-t-2 border-mictlai-gold/30 pt-4">
+                    <h3 className="text-mictlai-turquoise font-pixel text-lg mb-4">QR CODE IMAGE</h3>
+                    
+                    <div className="bg-black/50 p-4 border border-mictlai-turquoise/50">
+                      <div className="flex items-center gap-3">
+                        <div className="text-mictlai-gold text-3xl">🖼️</div>
+                        <div>
+                          <p className="text-mictlai-bone mb-2">The QR code image is available for download.</p>
+                          
+                          {imageDownloaded ? (
+                            <div className="flex items-center gap-2 text-mictlai-turquoise">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span>Image downloaded successfully</span>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={handleImageDownload}
+                                disabled={isLoading}
+                                className={`px-4 py-2 ${isLoading ? 'bg-mictlai-gold/30 cursor-wait' : 'bg-mictlai-gold hover:bg-mictlai-gold/80'} text-black font-pixel flex items-center gap-2`}
+                              >
+                                {isLoading ? (
+                                  <>
+                                    <LoadingIcon className="w-4 h-4" />
+                                    <span>DOWNLOADING...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span>DOWNLOAD IMAGE</span>
+                                  </>
+                                )}
+                              </button>
+                            
+                              {downloadTimeRemaining > 0 && (
+                                <div className="mt-2 text-sm text-mictlai-bone/70">
+                                  Time remaining: {downloadTimeRemaining} seconds
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleImageDownload}
-                      disabled={isLoading}
-                      className="py-2 px-4 bg-mictlai-gold hover:bg-mictlai-gold/80 text-black font-pixel text-sm flex items-center gap-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <LoadingIcon className="w-4 h-4" />
-                          DOWNLOADING...
-                        </>
-                      ) : downloadTimeRemaining > 0 ? (
-                        <>
-                          DOWNLOAD IMAGE ({downloadTimeRemaining}s)
-                        </>
-                      ) : (
-                        'DOWNLOAD IMAGE'
-                      )}
-                    </button>
                   </div>
-                  
-                  {downloadTimeRemaining > 0 && (
-                    <div className="mt-2 text-sm text-yellow-500">
-                      ⏱️ The image will be available for {downloadTimeRemaining} more seconds
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Alternative button if normal download button isn't showing */}
-              {isDecrypted && !imageDownloaded && !(order?.imageFileId && order?.imageFileExt) && order?.orderId && (
-                <div className="mt-4 p-4 bg-mictlai-turquoise/10 border-2 border-mictlai-turquoise/30">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="text-mictlai-turquoise font-pixel text-sm mb-2">DOWNLOAD QR CODE IMAGE</h4>
-                      <p className="text-mictlai-bone/70 text-xs mb-2">
-                        Try downloading the QR code image directly with this backup button.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!order) return;
-                        try {
-                          setIsLoading(true);
-                          await downloadBuyingOrderImage(order.orderId);
-                          setImageDownloaded(true);
-                          addNotification(
-                            'Image download started',
-                            NotificationType.SUCCESS,
-                            'The image has been downloaded to your device and removed from the server.'
-                          );
-                        } catch (error) {
-                          console.error('Error downloading image:', error);
-                          addNotification(
-                            'Failed to download image',
-                            NotificationType.ERROR,
-                            error instanceof Error ? error.message : 'Unknown error'
-                          );
-                        } finally {
-                          setIsLoading(false);
-                        }
-                      }}
-                      disabled={isLoading}
-                      className="py-2 px-4 bg-mictlai-turquoise hover:bg-mictlai-turquoise/80 text-black font-pixel text-sm flex items-center gap-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <LoadingIcon className="w-4 h-4" />
-                          DOWNLOADING...
-                        </>
-                      ) : (
-                        'DOWNLOAD IMAGE'
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {imageDownloaded && (
-                <div className="mt-4 p-4 bg-green-900/20 border-2 border-green-500/30">
-                  <h4 className="text-green-400 font-pixel text-sm mb-2">IMAGE DOWNLOADED</h4>
-                  <p className="text-mictlai-bone/70 text-xs">
-                    The image has been downloaded to your device and removed from the server.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -1,8 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useWallet } from '../../providers/WalletContext';
-import { createBuyingOrder, uploadBuyingOrderImage } from '../../services/marketplaceService';
+import { 
+  createBuyingOrder, 
+  uploadBuyingOrderImage,
+  validateOxxoSpinQrData
+} from '../../services/marketplaceService';
 import { useNotification, NotificationType } from '../../utils/notification';
 import { LoadingIcon } from '../Icons';
+import QrScanner from 'qr-scanner';
 
 // Example OXXO Spin QR codes with different amounts
 const exampleQrCodes = [
@@ -24,6 +29,68 @@ const exampleQrCodes = [
   }
 ];
 
+// Simple help component to explain OXXO QR scanning
+const OxxoQrHelp = ({ onClose }: { onClose: () => void }) => {
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg max-w-lg w-full p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-mictlai-gold font-pixel">OXXO SPIN QR CODE HELP</h3>
+          <button 
+            onClick={onClose}
+            className="text-mictlai-bone hover:text-mictlai-blood"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="space-y-4 text-mictlai-bone">
+          <p>
+            This feature allows you to scan OXXO Spin QR codes directly from images.
+            Upload an image containing an OXXO Spin QR code, and the system will automatically
+            extract the payment information.
+          </p>
+          
+          <div className="bg-black/50 p-3 border border-mictlai-gold/30">
+            <h4 className="text-mictlai-turquoise font-pixel mb-2">TEST QR CODE</h4>
+            <div className="flex items-center gap-4">
+              <a 
+                href="/test/test-oxxo-qr.png" 
+                target="_blank"
+                className="block border-2 border-mictlai-gold/50 hover:border-mictlai-gold transition-colors"
+              >
+                <img src="/test/test-oxxo-qr.png" alt="Test OXXO Spin QR Code" className="w-32 h-32" />
+              </a>
+              <div>
+                <p className="text-sm">Download this test QR code and upload it to try the feature. It contains valid OXXO Spin data for 100 MXN.</p>
+                <a 
+                  href="/test/test-oxxo-qr.png" 
+                  download="test-oxxo-qr.png"
+                  className="mt-2 inline-block bg-mictlai-gold/20 hover:bg-mictlai-gold/30 text-mictlai-gold py-1 px-3 text-sm font-pixel"
+                >
+                  DOWNLOAD TEST QR
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-mictlai-bone/70 text-sm">
+            Note: In a real scenario, you would take a screenshot of the OXXO Spin QR code from the OXXO app or website.
+            The system will validate the QR code format to ensure it's a legitimate OXXO payment.
+          </p>
+        </div>
+        
+        <button
+          onClick={onClose}
+          className="w-full mt-4 py-2 bg-mictlai-gold text-black font-pixel hover:bg-mictlai-gold/80"
+        >
+          CLOSE
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function CreateBuyingOrder() {
   const { isConnected } = useWallet();
   const { addNotification } = useNotification();
@@ -38,15 +105,20 @@ export default function CreateBuyingOrder() {
   const [showExamples, setShowExamples] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  
+  // Initialize QR Scanner
+  useEffect(() => {
+    // Make sure QR Scanner worker is ready
+    QrScanner.WORKER_PATH = '/qr-scanner-worker.min.js';
+  }, []);
   
   // Parse MXN amount from QR code data
   const getMxnAmountFromQrCode = (qrData: string): number => {
-    try {
-      const parsedData = JSON.parse(qrData);
-      return parseFloat(parsedData.Monto) || 0;
-    } catch (e) {
-      return 0;
-    }
+    const validation = validateOxxoSpinQrData(qrData);
+    return validation.mxnAmount || 0;
   };
   
   // Calculate token amount based on MXN amount and selected token
@@ -76,6 +148,63 @@ export default function CreateBuyingOrder() {
     }
   }, [qrCodeData, token]);
   
+  // Scan QR code from image file
+  const scanQrCodeFromImage = async (file: File) => {
+    try {
+      setIsScanning(true);
+      setScanError(null);
+      
+      const result = await QrScanner.scanImage(file, {
+        returnDetailedScanResult: true,
+      });
+      
+      if (result && result.data) {
+        // Check if the QR code data is valid OXXO Spin format
+        const validation = validateOxxoSpinQrData(result.data);
+        
+        if (validation.isValid) {
+          setQrCodeData(result.data);
+          
+          // Update token amount based on the extracted MXN amount
+          if (validation.mxnAmount && validation.mxnAmount > 0) {
+            const calculatedAmount = calculateTokenAmount(validation.mxnAmount);
+            setTokenAmount(calculatedAmount);
+          }
+          
+          addNotification(
+            'QR code scanned successfully',
+            NotificationType.SUCCESS,
+            `Detected OXXO Spin QR code for ${validation.mxnAmount} MXN`
+          );
+        } else {
+          setScanError('Invalid OXXO Spin QR code format. Please upload a valid OXXO Spin QR code image.');
+          addNotification(
+            'Invalid QR code format',
+            NotificationType.WARNING,
+            'The scanned QR code is not a valid OXXO Spin QR code.'
+          );
+        }
+      } else {
+        setScanError('No QR code found in image');
+        addNotification(
+          'No QR code detected',
+          NotificationType.WARNING,
+          'No QR code was detected in the uploaded image.'
+        );
+      }
+    } catch (error) {
+      console.error('Error scanning QR code:', error);
+      setScanError('Error scanning QR code: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      addNotification(
+        'QR code scanning error',
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    } finally {
+      setIsScanning(false);
+    }
+  };
+  
   // Handle image selection
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -95,6 +224,7 @@ export default function CreateBuyingOrder() {
       }
       
       setSelectedImage(file);
+      setScanError(null);
       
       // Create preview
       const reader = new FileReader();
@@ -102,6 +232,9 @@ export default function CreateBuyingOrder() {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+      
+      // Scan QR code from the image
+      scanQrCodeFromImage(file);
     }
   };
   
@@ -109,6 +242,7 @@ export default function CreateBuyingOrder() {
   const clearSelectedImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
+    setScanError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -123,8 +257,24 @@ export default function CreateBuyingOrder() {
       return;
     }
     
-    if (!qrCodeData) {
-      addNotification('Please enter the QR code data', NotificationType.WARNING);
+    // Validate QR code data
+    const validation = validateOxxoSpinQrData(qrCodeData);
+    if (!validation.isValid) {
+      addNotification(
+        'Invalid OXXO Spin QR code data',
+        NotificationType.WARNING,
+        'Please upload a valid OXXO Spin QR code image or select from the examples'
+      );
+      return;
+    }
+    
+    // Require an image to be uploaded for verification
+    if (!selectedImage) {
+      addNotification(
+        'QR code image required',
+        NotificationType.WARNING,
+        'Please upload the OXXO Spin QR code image for verification'
+      );
       return;
     }
     
@@ -198,10 +348,21 @@ export default function CreateBuyingOrder() {
   
   return (
     <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
+      {showHelp && <OxxoQrHelp onClose={() => setShowHelp(false)} />}
+      
       <div className="p-4 bg-black border-b-3 border-mictlai-gold/70">
-        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
-          BUY TOKENS WITH OXXO SPIN
-        </h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+            BUY TOKENS WITH OXXO SPIN
+          </h2>
+          <button 
+            onClick={() => setShowHelp(true)}
+            className="px-2 py-1 bg-mictlai-gold/20 text-mictlai-turquoise hover:bg-mictlai-gold/30 text-xs font-pixel border border-mictlai-turquoise/50"
+            title="Learn about QR scanning"
+          >
+            QR HELP
+          </button>
+        </div>
         <p className="text-mictlai-bone/70 mt-2 text-sm">
           Create a buying order using an OXXO Spin QR code to exchange Mexican Pesos for tokens
         </p>
@@ -209,7 +370,76 @@ export default function CreateBuyingOrder() {
       
       <div className="p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* QR Code Data */}
+          {/* Image Upload - Now the primary focus */}
+          <div className="space-y-2">
+            <label className="block text-mictlai-bone font-pixel text-sm">
+              UPLOAD OXXO SPIN QR CODE IMAGE
+            </label>
+            <div className="flex items-center">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept=".jpg,.jpeg,.png"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="py-2 px-3 bg-black border-2 border-mictlai-gold text-mictlai-gold hover:bg-mictlai-gold/20 font-pixel text-sm"
+              >
+                {isScanning ? 'SCANNING...' : 'SELECT QR CODE IMAGE'}
+              </button>
+              {selectedImage && (
+                <button
+                  type="button"
+                  onClick={clearSelectedImage}
+                  className="ml-2 py-2 px-3 bg-black border-2 border-mictlai-blood/50 text-mictlai-blood hover:border-mictlai-blood font-pixel text-sm"
+                >
+                  CLEAR
+                </button>
+              )}
+              {selectedImage && (
+                <span className="ml-3 text-mictlai-bone/70 text-sm truncate max-w-xs">
+                  {selectedImage.name} ({Math.round(selectedImage.size / 1024)} KB)
+                </span>
+              )}
+            </div>
+            
+            {imagePreview && (
+              <div className="mt-2 flex flex-col md:flex-row gap-4 items-start">
+                <div className="max-w-xs">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="border-2 border-mictlai-gold/30 max-h-40 object-contain"
+                  />
+                </div>
+                <div className="max-w-md">
+                  {isScanning ? (
+                    <div className="flex items-center gap-2 text-mictlai-turquoise">
+                      <LoadingIcon className="w-4 h-4" />
+                      <span>Scanning QR code...</span>
+                    </div>
+                  ) : scanError ? (
+                    <div className="text-mictlai-blood text-sm p-3 border border-mictlai-blood/30 bg-mictlai-blood/10">
+                      {scanError}
+                    </div>
+                  ) : qrCodeData ? (
+                    <div className="text-mictlai-turquoise text-sm p-3 border border-mictlai-turquoise/30 bg-mictlai-turquoise/10">
+                      ✓ QR code detected: OXXO Spin code for {getMxnAmountFromQrCode(qrCodeData)} MXN
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+            
+            <div className="text-mictlai-bone/50 text-xs">
+              Upload a PNG or JPG/JPEG image containing an OXXO Spin QR code (max 5MB). The system will automatically extract the QR code data.
+            </div>
+          </div>
+          
+          {/* QR Code Data - Now secondary and auto-filled */}
           <div className="space-y-2">
             <label className="block text-mictlai-bone font-pixel text-sm">
               OXXO SPIN QR CODE DATA
@@ -319,60 +549,6 @@ export default function CreateBuyingOrder() {
             />
             <div className="text-mictlai-bone/50 text-xs">
               Exchange rate: 1 USDC = 20 MXN, 1 XOC = 1 MXN, 1 MXNe = 1 MXN
-            </div>
-          </div>
-          
-          {/* Image Upload */}
-          <div className="space-y-2">
-            <label className="block text-mictlai-bone font-pixel text-sm">
-              UPLOAD QR CODE IMAGE (OPTIONAL)
-            </label>
-            <div className="flex items-center">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageSelect}
-                accept=".jpg,.jpeg,.png"
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="py-2 px-3 bg-black border-2 border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-gold font-pixel text-sm"
-              >
-                SELECT IMAGE
-              </button>
-              {selectedImage && (
-                <button
-                  type="button"
-                  onClick={clearSelectedImage}
-                  className="ml-2 py-2 px-3 bg-black border-2 border-mictlai-blood/50 text-mictlai-blood hover:border-mictlai-blood font-pixel text-sm"
-                >
-                  CLEAR
-                </button>
-              )}
-              {selectedImage && (
-                <span className="ml-3 text-mictlai-bone/70 text-sm truncate max-w-xs">
-                  {selectedImage.name} ({Math.round(selectedImage.size / 1024)} KB)
-                </span>
-              )}
-            </div>
-            
-            {imagePreview && (
-              <div className="mt-2 max-w-xs">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className="border-2 border-mictlai-gold/30 max-h-40 object-contain"
-                />
-                <p className="text-mictlai-bone/50 text-xs mt-1">
-                  This image will be stored securely and can only be downloaded after QR code decryption.
-                </p>
-              </div>
-            )}
-            
-            <div className="text-mictlai-bone/50 text-xs">
-              Upload a PNG or JPG/JPEG image (max 5MB). This image will be securely stored and only accessible to users who can decrypt the QR code data.
             </div>
           </div>
           

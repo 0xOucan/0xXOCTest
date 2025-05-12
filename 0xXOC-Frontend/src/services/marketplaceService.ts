@@ -422,3 +422,41 @@ export const getBuyingOrderImageUrl = (orderId: string): string => {
   // Add a timestamp query parameter to bypass cache
   return `${apiUrl}/api/buying-orders/${orderId}/download-image?t=${Date.now()}`;
 };
+
+// Add a new function to validate OXXO Spin QR code data
+
+/**
+ * Validate if a string is a valid OXXO Spin QR code data
+ * @param qrData QR code data to validate
+ * @returns Boolean indicating if the data is valid and the parsed data object
+ */
+export const validateOxxoSpinQrData = (qrData: string): { isValid: boolean; data?: any; mxnAmount?: number } => {
+  try {
+    // Try to parse the QR code data as JSON
+    const parsed = JSON.parse(qrData);
+    
+    // Check for required OXXO Spin QR code fields
+    const isValid = Boolean(
+      parsed.TipoOperacion === "0004" &&
+      parsed.VersionQR &&
+      parsed.FechaExpiracionQR &&
+      parsed.FechaCreacionQR &&
+      parsed.EmisorQR &&
+      parsed.Monto &&
+      parsed.Operacion &&
+      parsed.Operacion.CR
+    );
+    
+    // Get MXN amount from the QR code
+    const mxnAmount = isValid ? parseFloat(parsed.Monto) : 0;
+    
+    return {
+      isValid,
+      data: isValid ? parsed : undefined,
+      mxnAmount: isValid ? mxnAmount : undefined
+    };
+  } catch (e) {
+    console.error("Error validating OXXO Spin QR code data:", e);
+    return { isValid: false };
+  }
+};
