@@ -47,6 +47,10 @@ export interface BuyingOrder {
   encryptedQrData?: string;
   publicUuid?: string;
   onChainTxHash?: string;
+  imageFileId?: string;
+  imageFileExt?: string;
+  downloadStarted?: boolean;
+  hasBeenDecrypted?: boolean;
 }
 
 export interface CreateBuyingOrderParams {
@@ -329,133 +333,92 @@ export const decryptQrCode = async (params: DecryptQRCodeParams): Promise<string
   }
 };
 
-// Mock data for testing
-export const getMockSellingOrders = (): SellingOrder[] => {
-  return [
-    {
-      orderId: 'order-1678912345-1234',
-      seller: '0x1234567890123456789012345678901234567890',
-      token: 'XOC',
-      amount: '100',
-      mxnAmount: '2000',
-      status: 'active',
-      createdAt: Date.now() - 3600000, // 1 hour ago
-      expiresAt: Date.now() + 86400000 * 7, // 7 days from now
-      txHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
-    },
-    {
-      orderId: 'order-1678912345-2345',
-      seller: '0x2345678901234567890123456789012345678901',
-      token: 'MXNe',
-      amount: '500',
-      mxnAmount: '500',
-      status: 'active',
-      createdAt: Date.now() - 86400000, // 1 day ago
-      expiresAt: Date.now() + 86400000 * 6, // 6 days from now
-      txHash: '0xbcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890a'
-    },
-    {
-      orderId: 'order-1678912345-3456',
-      seller: '0x3456789012345678901234567890123456789012',
-      token: 'USDC',
-      amount: '250',
-      mxnAmount: '5000',
-      status: 'active',
-      createdAt: Date.now() - 86400000 * 2, // 2 days ago
-      expiresAt: Date.now() + 86400000 * 5, // 5 days from now
-      txHash: '0xcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
-    },
-    {
-      orderId: 'order-1678912345-4567',
-      seller: '0x4567890123456789012345678901234567890123',
-      token: 'XOC',
-      amount: '50',
-      mxnAmount: '1000',
-      status: 'filled',
-      createdAt: Date.now() - 86400000 * 3, // 3 days ago
-      expiresAt: Date.now() + 86400000 * 4, // 4 days from now
-      txHash: '0xdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abc',
-      filledAt: Date.now() - 86400000, // 1 day ago
-      filledTxHash: '0xef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd',
-      filledBy: '0x8901234567890123456789012345678901234567'
-    },
-    {
-      orderId: 'order-1678912345-5678',
-      seller: '0x5678901234567890123456789012345678901234',
-      token: 'USDC',
-      amount: '100',
-      mxnAmount: '2000',
-      status: 'cancelled',
-      createdAt: Date.now() - 86400000 * 4, // 4 days ago
-      txHash: '0xf1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcde'
+/**
+ * Upload an image for a buying order
+ */
+export const uploadBuyingOrderImage = async (orderId: string, imageFile: File): Promise<boolean> => {
+  try {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const response = await fetch(`${apiUrl}/api/buying-orders/${orderId}/upload-image`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to upload image');
     }
-  ];
+    
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error(`Error uploading image for order ${orderId}:`, error);
+    throw error;
+  }
 };
 
-export const getMockBuyingOrders = (): BuyingOrder[] => {
-  return [
-    {
-      orderId: 'buyorder-1678912345-1234',
-      buyer: '0x1234567890123456789012345678901234567890',
-      mxnAmount: 2000,
-      token: 'XOC',
-      tokenAmount: '100',
-      status: 'active',
-      createdAt: Date.now() - 3600000, // 1 hour ago
-      expiresAt: Date.now() + 86400000 * 7, // 7 days from now
-      referenceCode: 'OXXO1234567890',
-      qrExpiration: '25/12/31 23:59:59'
-    },
-    {
-      orderId: 'buyorder-1678912345-2345',
-      buyer: '0x2345678901234567890123456789012345678901',
-      mxnAmount: 500,
-      token: 'MXNe',
-      tokenAmount: '500',
-      status: 'active',
-      createdAt: Date.now() - 86400000, // 1 day ago
-      expiresAt: Date.now() + 86400000 * 6, // 6 days from now
-      referenceCode: 'OXXO2345678901',
-      qrExpiration: '25/11/30 23:59:59'
-    },
-    {
-      orderId: 'buyorder-1678912345-3456',
-      buyer: '0x3456789012345678901234567890123456789012',
-      mxnAmount: 5000,
-      token: 'USDC',
-      tokenAmount: '250',
-      status: 'active',
-      createdAt: Date.now() - 86400000 * 2, // 2 days ago
-      expiresAt: Date.now() + 86400000 * 5, // 5 days from now
-      referenceCode: 'OXXO3456789012',
-      qrExpiration: '25/10/31 23:59:59'
-    },
-    {
-      orderId: 'buyorder-1678912345-4567',
-      buyer: '0x4567890123456789012345678901234567890123',
-      mxnAmount: 1000,
-      token: 'XOC',
-      tokenAmount: '50',
-      status: 'filled',
-      createdAt: Date.now() - 86400000 * 3, // 3 days ago
-      expiresAt: Date.now() + 86400000 * 4, // 4 days from now
-      referenceCode: 'OXXO4567890123',
-      qrExpiration: '25/09/30 23:59:59',
-      filledAt: Date.now() - 86400000, // 1 day ago
-      filledBy: '0x8901234567890123456789012345678901234567',
-      txHash: '0xef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd'
-    },
-    {
-      orderId: 'buyorder-1678912345-5678',
-      buyer: '0x5678901234567890123456789012345678901234',
-      mxnAmount: 2000,
-      token: 'USDC',
-      tokenAmount: '100',
-      status: 'cancelled',
-      createdAt: Date.now() - 86400000 * 4, // 4 days ago
-      expiresAt: Date.now() - 86400000, // 1 day ago
-      referenceCode: 'OXXO5678901234',
-      qrExpiration: '25/08/31 23:59:59'
+/**
+ * Download an image from a buying order
+ * The image will be available for 60 seconds after the first download request
+ * @returns Promise resolving to boolean indicating success
+ */
+export const downloadBuyingOrderImage = async (orderId: string): Promise<boolean> => {
+  try {
+    console.log(`Attempting to download image for order ${orderId}`);
+    
+    // First check if the image is available and if QR code has been decrypted
+    const response = await fetch(`${apiUrl}/api/buying-orders/${orderId}/download-image`, {
+      method: 'HEAD'
+    });
+    
+    if (!response.ok) {
+      console.error(`Error checking image availability: ${response.status} ${response.statusText}`);
+      
+      // Parse the error message from the response if possible
+      let errorMessage = `Server error: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If we can't parse the error as JSON, use the default message
+      }
+      
+      if (response.status === 403) {
+        throw new Error('You must decrypt the QR code before downloading the image.');
+      } else if (response.status === 404) {
+        throw new Error('No image found for this order.');
+      } else {
+        throw new Error(errorMessage);
+      }
     }
-  ];
-}; 
+    
+    // Create a hidden link and trigger the download
+    const link = document.createElement('a');
+    link.href = getBuyingOrderImageUrl(orderId);
+    link.download = `order-image-${orderId}.png`;
+    link.target = '_blank'; // Open in new tab to help with download reliability
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log(`Download triggered for order ${orderId}`);
+    
+    // Return true to indicate download was initiated
+    return true;
+  } catch (error) {
+    console.error(`Error downloading image for order ${orderId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get the URL for downloading an image from a buying order
+ */
+export const getBuyingOrderImageUrl = (orderId: string): string => {
+  // Add a timestamp query parameter to bypass cache
+  return `${apiUrl}/api/buying-orders/${orderId}/download-image?t=${Date.now()}`;
+};

@@ -42,7 +42,7 @@ async function checkAndUpdateBuyingOrders() {
           
           // If transaction has a real hash, use it to update the order
           if (pendingTx.hash) {
-            updateBuyingOrderStatus(order.orderId, 'active' as const, pendingTx.hash);
+            updateBuyingOrderStatus(order.orderId, 'active' as const, { onChainTxHash: pendingTx.hash });
             console.log(`Updated order ${order.orderId} to active status with hash ${pendingTx.hash}`);
           } else {
             updateBuyingOrderStatus(order.orderId, 'active' as const);

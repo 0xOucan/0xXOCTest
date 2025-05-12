@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useWallet } from '../../providers/WalletContext';
-import { createBuyingOrder } from '../../services/marketplaceService';
+import { createBuyingOrder, uploadBuyingOrderImage } from '../../services/marketplaceService';
 import { useNotification, NotificationType } from '../../utils/notification';
 import { LoadingIcon } from '../Icons';
 
@@ -27,6 +27,7 @@ const exampleQrCodes = [
 export default function CreateBuyingOrder() {
   const { isConnected } = useWallet();
   const { addNotification } = useNotification();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // State variables
   const [qrCodeData, setQrCodeData] = useState('');
@@ -35,6 +36,8 @@ export default function CreateBuyingOrder() {
   const [memo, setMemo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showExamples, setShowExamples] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // Parse MXN amount from QR code data
   const getMxnAmountFromQrCode = (qrData: string): number => {
@@ -73,6 +76,44 @@ export default function CreateBuyingOrder() {
     }
   }, [qrCodeData, token]);
   
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        addNotification('Please select a valid image file (JPG, JPEG, or PNG)', NotificationType.WARNING);
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        addNotification('Image file is too large. Maximum size is 5MB', NotificationType.WARNING);
+        return;
+      }
+      
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Clear selected image
+  const clearSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +138,29 @@ export default function CreateBuyingOrder() {
         memo
       });
       
+      // Extract order ID from the response
+      // The response might be in format "Order created: buyorder-1234567890-1234"
+      const orderIdMatch = response.match(/buyorder-[0-9]+-[0-9]+/);
+      if (orderIdMatch && selectedImage) {
+        const orderId = orderIdMatch[0];
+        try {
+          // Upload the image if one is selected
+          await uploadBuyingOrderImage(orderId, selectedImage);
+          addNotification(
+            'Image uploaded successfully',
+            NotificationType.SUCCESS,
+            'Your image has been securely stored and will be available for download after QR decryption.'
+          );
+        } catch (imageError) {
+          console.error('Error uploading image:', imageError);
+          addNotification(
+            'Failed to upload image',
+            NotificationType.WARNING,
+            'Your order was created but the image upload failed.'
+          );
+        }
+      }
+      
       addNotification(
         'Buy order created successfully',
         NotificationType.SUCCESS,
@@ -107,6 +171,7 @@ export default function CreateBuyingOrder() {
       setQrCodeData('');
       setTokenAmount('');
       setMemo('');
+      clearSelectedImage();
     } catch (error) {
       console.error('Error creating buying order:', error);
       addNotification(
@@ -254,6 +319,60 @@ export default function CreateBuyingOrder() {
             />
             <div className="text-mictlai-bone/50 text-xs">
               Exchange rate: 1 USDC = 20 MXN, 1 XOC = 1 MXN, 1 MXNe = 1 MXN
+            </div>
+          </div>
+          
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <label className="block text-mictlai-bone font-pixel text-sm">
+              UPLOAD QR CODE IMAGE (OPTIONAL)
+            </label>
+            <div className="flex items-center">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept=".jpg,.jpeg,.png"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="py-2 px-3 bg-black border-2 border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-gold font-pixel text-sm"
+              >
+                SELECT IMAGE
+              </button>
+              {selectedImage && (
+                <button
+                  type="button"
+                  onClick={clearSelectedImage}
+                  className="ml-2 py-2 px-3 bg-black border-2 border-mictlai-blood/50 text-mictlai-blood hover:border-mictlai-blood font-pixel text-sm"
+                >
+                  CLEAR
+                </button>
+              )}
+              {selectedImage && (
+                <span className="ml-3 text-mictlai-bone/70 text-sm truncate max-w-xs">
+                  {selectedImage.name} ({Math.round(selectedImage.size / 1024)} KB)
+                </span>
+              )}
+            </div>
+            
+            {imagePreview && (
+              <div className="mt-2 max-w-xs">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="border-2 border-mictlai-gold/30 max-h-40 object-contain"
+                />
+                <p className="text-mictlai-bone/50 text-xs mt-1">
+                  This image will be stored securely and can only be downloaded after QR code decryption.
+                </p>
+              </div>
+            )}
+            
+            <div className="text-mictlai-bone/50 text-xs">
+              Upload a PNG or JPG/JPEG image (max 5MB). This image will be securely stored and only accessible to users who can decrypt the QR code data.
             </div>
           </div>
           

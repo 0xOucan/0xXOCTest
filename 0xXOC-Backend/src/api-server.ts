@@ -18,8 +18,33 @@ import {
   updateBuyingOrderStatus 
 } from './action-providers/token-buying-order/utils';
 import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
+import multer from "multer";
+import { saveUploadedFile, getFileById, deleteFile } from "./utils/file-storage";
+import path from "path";
 
 dotenv.config();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // Limit file size to 5MB
+  },
+  fileFilter: (_req, file, cb) => {
+    // Check file type
+    const filetypes = /jpeg|jpg|png/;
+    // Check extension
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    // Check mime type
+    const mimetype = filetypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only images (jpg, jpeg, png) are allowed"));
+    }
+  },
+});
 
 // Store connected wallet address globally for use across requests
 let connectedWalletAddress: string | null = null;
@@ -711,6 +736,177 @@ async function createServer() {
       }
     });
 
+    // File upload endpoint for buying orders
+    app.post("/api/buying-orders/:orderId/upload-image", upload.single('image'), async (req, res) => {
+      try {
+        const { orderId } = req.params;
+        
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            message: 'No image file provided'
+          });
+        }
+        
+        // Get order
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        // Save file to disk
+        const { fileId, path: filePath, filename } = await saveUploadedFile(
+          req.file.buffer, 
+          req.file.originalname
+        );
+        
+        // Extract file extension
+        const fileExt = path.extname(filename);
+        
+        // Update order with file information
+        const updatedOrder = updateBuyingOrderStatus(
+          orderId,
+          order.status,
+          { 
+            imageFileId: fileId,
+            imageFileExt: fileExt
+          }
+        );
+        
+        return res.json({
+          success: true,
+          message: 'Image uploaded successfully',
+          fileId,
+          fileExt
+        });
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
+    // File download endpoint for buying orders
+    app.get("/api/buying-orders/:orderId/download-image", async (req, res) => {
+      try {
+        const { orderId } = req.params;
+        console.log(`📥 Download image request for order ${orderId}`);
+        
+        // Get order
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          console.error(`❌ Order not found: ${orderId}`);
+          return res.status(404).json({
+            success: false,
+            message: `Order with ID ${orderId} not found`
+          });
+        }
+        
+        console.log(`📋 Order details: ${JSON.stringify({
+          orderId: order.orderId,
+          hasImageFileId: !!order.imageFileId,
+          hasImageFileExt: !!order.imageFileExt,
+          imageFileId: order.imageFileId,
+          imageFileExt: order.imageFileExt,
+          hasBeenDecrypted: !!order.hasBeenDecrypted
+        })}`);
+        
+        // Check if order has an associated image
+        if (!order.imageFileId || !order.imageFileExt) {
+          console.error(`❌ No image associated with order ${orderId}`);
+          return res.status(404).json({
+            success: false,
+            message: 'No image associated with this order'
+          });
+        }
+        
+        // Check if the QR code has been decrypted first
+        if (!order.hasBeenDecrypted) {
+          console.error(`❌ Order ${orderId} has not been decrypted yet`);
+          return res.status(403).json({
+            success: false,
+            message: 'You must decrypt the QR code before downloading the image'
+          });
+        }
+        
+        try {
+          // Get file
+          console.log(`🔍 Retrieving file: ${order.imageFileId}${order.imageFileExt}`);
+          const { buffer, path: filePath, filename } = await getFileById(
+            order.imageFileId, 
+            order.imageFileExt
+          );
+          
+          // Set headers for download
+          console.log(`📤 Sending file: ${filename} (${buffer.length} bytes)`);
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          res.setHeader('Content-Type', getMimeType(order.imageFileExt));
+          res.setHeader('Content-Length', buffer.length);
+          
+          // Send file
+          res.send(buffer);
+          
+          // Don't delete the file immediately
+          // Instead, mark it for deletion after 60 seconds
+          console.log(`⏱️ Scheduling file deletion in 60 seconds: ${filePath}`);
+          
+          // Add a "downloadStarted" flag to the order
+          updateBuyingOrderStatus(
+            orderId,
+            order.status,
+            { 
+              downloadStarted: true
+            }
+          );
+          
+          setTimeout(async () => {
+            try {
+              // Delete the file after 60 seconds
+              console.log(`🗑️ Deleting file after delay: ${filePath}`);
+              await deleteFile(filePath);
+              
+              // Only remove the file references after successful deletion
+              console.log(`✏️ Updating order to remove file references after delay`);
+              updateBuyingOrderStatus(
+                orderId,
+                order.status,
+                { 
+                  imageFileId: undefined,
+                  imageFileExt: undefined,
+                  downloadStarted: undefined
+                }
+              );
+              
+              console.log(`✅ File cleanup complete for order ${orderId}`);
+            } catch (delayedError) {
+              console.error(`❌ Error in delayed file cleanup: ${delayedError.message}`);
+            }
+          }, 60000); // 60 seconds delay
+          
+          console.log(`✅ File download initiated for order ${orderId}`);
+        } catch (fileError) {
+          console.error(`❌ Error retrieving file: ${fileError.message}`);
+          return res.status(500).json({
+            success: false,
+            message: `Error retrieving file: ${fileError.message}`
+          });
+        }
+      } catch (error) {
+        console.error('Error downloading image:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown server error'
+        });
+      }
+    });
+
     // Start the server
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
@@ -733,6 +929,21 @@ async function createServer() {
   } catch (error) {
     console.error("🚨 Failed to start API server:", error);
     process.exit(1);
+  }
+}
+
+/**
+ * Get MIME type based on file extension
+ */
+function getMimeType(fileExt: string): string {
+  switch(fileExt.toLowerCase()) {
+    case '.png':
+      return 'image/png';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
   }
 }
 
