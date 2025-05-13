@@ -504,3 +504,147 @@ export const requestQRCodeDownload = async (orderId: string): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * Fill a selling order with an OXXO QR code
+ */
+export const fillSellingOrder = async (orderId: string, qrCodeData: string): Promise<string> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/selling-orders/${orderId}/fill`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ qrCodeData })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.agentResponse;
+  } catch (error) {
+    console.error('Error filling selling order:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all fills for a selling order
+ */
+export const getSellingOrderFills = async (orderId: string): Promise<any[]> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/selling-orders/${orderId}/fills`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.fills || [];
+  } catch (error) {
+    console.error('Error getting selling order fills:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a specific fill for a selling order
+ */
+export const getSellingOrderFillById = async (orderId: string, fillId: string): Promise<any> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/selling-orders/${orderId}/fills/${fillId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.fill;
+  } catch (error) {
+    console.error('Error getting selling order fill:', error);
+    throw error;
+  }
+};
+
+/**
+ * Validate an OXXO QR code before filling a selling order
+ */
+export const validateOxxoQrForSellingOrder = (qrData: string, expectedMxnAmount: string): { isValid: boolean; message?: string; qrAmount?: number } => {
+  try {
+    // Parse the QR code data
+    const parsedData = JSON.parse(qrData);
+    
+    // Basic validation
+    if (!parsedData.TipoOperacion || parsedData.TipoOperacion !== '0004') {
+      return { isValid: false, message: 'Invalid QR code: not an OXXO Spin QR code' };
+    }
+    
+    if (!parsedData.Monto || typeof parsedData.Monto !== 'number') {
+      return { isValid: false, message: 'Invalid QR code: amount missing or invalid' };
+    }
+    
+    if (!parsedData.Operacion?.CR) {
+      return { isValid: false, message: 'Invalid QR code: reference code missing' };
+    }
+    
+    // Validate amount (with 5% tolerance)
+    const expectedAmount = parseFloat(expectedMxnAmount);
+    const qrAmount = parsedData.Monto;
+    
+    if (isNaN(expectedAmount)) {
+      return { isValid: false, message: 'Invalid expected MXN amount' };
+    }
+    
+    const tolerance = expectedAmount * 0.05; // 5% tolerance
+    const minAllowed = expectedAmount - tolerance;
+    const maxAllowed = expectedAmount + tolerance;
+    
+    if (qrAmount < minAllowed || qrAmount > maxAllowed) {
+      return { 
+        isValid: false, 
+        message: `QR amount (${qrAmount} MXN) doesn't match expected amount (${expectedAmount} MXN)`,
+        qrAmount
+      };
+    }
+    
+    // Validate expiration date
+    if (!parsedData.FechaExpiracionQR) {
+      return { isValid: false, message: 'Invalid QR code: expiration date missing' };
+    }
+    
+    // Parse YY/MM/DD HH:MM:SS date format
+    const [datePart, timePart] = parsedData.FechaExpiracionQR.split(' ');
+    const [year, month, day] = datePart.split('/');
+    
+    // Add 2000 to get full year (YY -> 20YY)
+    const fullYear = 2000 + parseInt(year, 10);
+    
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    
+    if (timePart) {
+      const [hoursStr, minutesStr, secondsStr] = timePart.split(':');
+      hours = parseInt(hoursStr, 10);
+      minutes = parseInt(minutesStr, 10);
+      seconds = parseInt(secondsStr, 10);
+    }
+    
+    const expirationDate = new Date(fullYear, parseInt(month, 10) - 1, parseInt(day, 10), hours, minutes, seconds);
+    
+    if (expirationDate < new Date()) {
+      return { isValid: false, message: 'QR code has expired' };
+    }
+    
+    // QR code is valid
+    return { isValid: true, qrAmount };
+  } catch (error) {
+    console.error('Error validating QR code:', error);
+    return { isValid: false, message: 'Invalid QR code format' };
+  }
+};

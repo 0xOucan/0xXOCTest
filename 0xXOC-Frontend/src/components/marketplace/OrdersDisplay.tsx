@@ -6,8 +6,6 @@ import {
   getBuyingOrders, 
   SellingOrder, 
   BuyingOrder, 
-  getMockSellingOrders, 
-  getMockBuyingOrders,
   cancelSellingOrder,
   cancelBuyingOrder
 } from '../../services/marketplaceService';

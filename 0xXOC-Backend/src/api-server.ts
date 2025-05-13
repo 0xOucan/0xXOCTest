@@ -22,6 +22,12 @@ import { startTokenBuyingOrderFillerRelay } from "./services/token-buying-order-
 import multer from "multer";
 import { saveUploadedFile, getFileById, deleteFile } from "./utils/file-storage";
 import path from "path";
+import { startTokenSellingOrderFillerRelay } from "./services/token-selling-order-filler-relay";
+import { 
+  getFillById, 
+  getFillsByOrderId, 
+  updateFillStatus 
+} from './action-providers/token-selling-order-filler/utils';
 
 dotenv.config();
 
@@ -142,6 +148,9 @@ async function createServer() {
     
     // Start the token buying order filler relay service
     const stopTokenBuyingOrderFillerRelay = startTokenBuyingOrderFillerRelay();
+    
+    // Start the token selling order filler relay service
+    const stopTokenSellingOrderFillerRelay = startTokenSellingOrderFillerRelay();
     
     // Initialize the default agent cache
     agentCache["default-base"] = {
@@ -1028,6 +1037,176 @@ async function createServer() {
       }
     });
 
+    // Token Selling Order Fill endpoints
+    
+    // Get all fills for a selling order
+    app.get('/api/selling-orders/:orderId/fills', (req, res) => {
+      try {
+        const { orderId } = req.params;
+        
+        const fills = getFillsByOrderId(orderId);
+        
+        if (fills.length === 0) {
+          return res.json({
+            success: true,
+            message: `No fills found for order ${orderId}`,
+            fills: []
+          });
+        }
+        
+        return res.json({
+          success: true,
+          fills
+        });
+      } catch (error) {
+        console.error('Error getting fills for selling order:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+    
+    // Get specific fill
+    app.get('/api/selling-orders/:orderId/fills/:fillId', (req, res) => {
+      try {
+        const { orderId, fillId } = req.params;
+        
+        const fill = getFillById(fillId);
+        
+        if (!fill) {
+          return res.status(404).json({
+            success: false,
+            message: `Fill with ID ${fillId} not found`
+          });
+        }
+        
+        // Check if this fill is associated with the order
+        if (fill.orderId !== orderId) {
+          return res.status(400).json({
+            success: false,
+            message: `Fill ${fillId} is not associated with order ${orderId}`
+          });
+        }
+        
+        return res.json({
+          success: true,
+          fill
+        });
+      } catch (error) {
+        console.error('Error getting fill details:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+    
+    // Update fill status
+    app.post('/api/selling-orders/:orderId/fills/:fillId/update', (req, res) => {
+      try {
+        const { orderId, fillId } = req.params;
+        const { status, additionalData } = req.body;
+        
+        const fill = getFillById(fillId);
+        
+        if (!fill) {
+          return res.status(404).json({
+            success: false,
+            message: `Fill with ID ${fillId} not found`
+          });
+        }
+        
+        // Check if this fill is associated with the order
+        if (fill.orderId !== orderId) {
+          return res.status(400).json({
+            success: false,
+            message: `Fill ${fillId} is not associated with order ${orderId}`
+          });
+        }
+        
+        // Update the fill
+        const updatedFill = updateFillStatus(
+          fillId,
+          status as 'pending' | 'processing' | 'completed' | 'failed' | 'expired' | 'cancelled',
+          additionalData
+        );
+        
+        if (!updatedFill) {
+          return res.status(500).json({
+            success: false,
+            message: `Failed to update fill ${fillId}`
+          });
+        }
+        
+        return res.json({
+          success: true,
+          fill: updatedFill
+        });
+      } catch (error) {
+        console.error('Error updating fill status:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+    
+    // Create endpoint for filling a selling order (handled by chatbot agent)
+    app.post('/api/selling-orders/:orderId/fill', async (req, res) => {
+      try {
+        const { orderId } = req.params;
+        const { qrCodeData } = req.body;
+        
+        if (!qrCodeData) {
+          return res.status(400).json({
+            success: false,
+            message: 'QR code data is required'
+          });
+        }
+        
+        // Use the agent to process the fill request
+        const agentResponse = await fetch(`${req.protocol}://${req.get('host')}/api/agent/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            userInput: `fill_selling_order orderId=${orderId} qrCodeData=${qrCodeData}` 
+          })
+        });
+        
+        if (!agentResponse.ok) {
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to process fill request through agent'
+          });
+        }
+        
+        const agentData = await agentResponse.json();
+        
+        // Extract fill ID from agent response if available
+        let fillId = null;
+        const fillIdMatch = agentData.response.match(/Fill ID: ([a-zA-Z0-9-]+)/);
+        if (fillIdMatch && fillIdMatch[1]) {
+          fillId = fillIdMatch[1];
+        }
+        
+        return res.json({
+          success: true,
+          message: 'Fill request processed',
+          fillId,
+          agentResponse: agentData.response
+        });
+      } catch (error) {
+        console.error('Error filling selling order:', error);
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
     // Start the server
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
@@ -1039,6 +1218,7 @@ async function createServer() {
         if (stopTokenSellingOrderRelay) stopTokenSellingOrderRelay();
         if (stopTokenBuyingOrderRelay) stopTokenBuyingOrderRelay();
         if (stopTokenBuyingOrderFillerRelay) stopTokenBuyingOrderFillerRelay();
+        if (stopTokenSellingOrderFillerRelay) stopTokenSellingOrderFillerRelay();
         process.exit(0);
       });
       

@@ -29,6 +29,7 @@ import { tokenBuyingOrderActionProvider } from "./action-providers/token-buying-
 import { tokenBuyingOrderFillerActionProvider } from "./action-providers/token-buying-order-filler";
 import { createPendingTransaction, pendingTransactions } from "./utils/transaction-utils";
 import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
+import { tokenSellingOrderFillerActionProvider } from "./action-providers/token-selling-order-filler";
 
 dotenv.config();
 
@@ -294,6 +295,7 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
           tokenSellingOrderActionProvider(),
           tokenBuyingOrderActionProvider(),
           tokenBuyingOrderFillerActionProvider(),
+          tokenSellingOrderFillerActionProvider(),
         ] : []),
       ],
     });
