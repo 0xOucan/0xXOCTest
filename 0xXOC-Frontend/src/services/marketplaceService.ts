@@ -672,3 +672,33 @@ export const requestManualTransferForFill = async (orderId: string, fillId: stri
     throw error;
   }
 };
+
+/**
+ * Manually trigger a token transfer for a buying order
+ */
+export const manuallyTriggerTokenTransfer = async (orderId: string): Promise<any> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/buying-orders/${orderId}/transfer-tokens`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      // Try to get JSON error if available
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to trigger token transfer');
+      } catch (jsonError) {
+        // If response is not JSON, use status text
+        throw new Error(`Failed to trigger token transfer: ${response.statusText}`);
+      }
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error triggering token transfer:', error);
+    throw error;
+  }
+};

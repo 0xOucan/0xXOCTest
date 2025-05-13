@@ -883,6 +883,26 @@ async function createServer() {
           
           // Return the file
           console.log(`✅ Sending file: ${filename}`);
+          
+          // Update the order to mark QR code as downloaded
+          updateBuyingOrderStatus(orderId, 'filled', {
+            qrCodeDownloaded: true,
+            qrCodeDownloadedAt: Date.now()
+          });
+          
+          console.log(`✅ QR code for order ${orderId} downloaded successfully - marked as downloaded`);
+          
+          // Manually trigger a check to process the token transfer
+          try {
+            const { processTokenTransfers } = await import('./services/token-buying-order-filler-relay');
+            console.log(`🔄 Triggering token transfer process after QR download for order ${orderId}`);
+            processTokenTransfers().catch(err => {
+              console.error('Error processing token transfers after QR download:', err);
+            });
+          } catch (processErr) {
+            console.error('Error importing token transfer processor:', processErr);
+          }
+          
           return res.send(buffer);
         } catch (error) {
           console.error(`❌ Error retrieving file: ${error instanceof Error ? error.message : String(error)}`);
@@ -1045,6 +1065,16 @@ async function createServer() {
         });
         
         console.log(`QR code for order ${orderId} downloaded successfully`);
+        
+        // Manually trigger a check to process the token transfer
+        try {
+          const { processTokenTransfers } = await import('./services/token-buying-order-filler-relay');
+          processTokenTransfers().catch(err => {
+            console.error('Error processing token transfers after QR download:', err);
+          });
+        } catch (processErr) {
+          console.error('Error importing token transfer processor:', processErr);
+        }
       } catch (error) {
         console.error('Error downloading QR code image:', error);
         return res.status(500).json({
@@ -1270,6 +1300,67 @@ async function createServer() {
           return res.status(500).json({ 
             error: `Failed to initiate token transfer for fill ${fillId}`,
             errorMessage: updatedFill?.transferError || 'Unknown error'
+          });
+        }
+      } catch (error) {
+        console.error('Error manually triggering token transfer:', error);
+        return res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    // Manually trigger token transfer for an order
+    app.post('/api/buying-orders/:orderId/transfer-tokens', async (req, res) => {
+      try {
+        const { orderId } = req.params;
+        
+        console.log(`🔄 Manually triggering token transfer for order ${orderId}`);
+        
+        // Get the order
+        const order = getBuyingOrderById(orderId);
+        
+        if (!order) {
+          return res.status(404).json({ error: `Order ${orderId} not found` });
+        }
+        
+        if (order.status !== 'filled') {
+          return res.status(400).json({ error: `Order ${orderId} is not filled. Current status: ${order.status}` });
+        }
+        
+        if (!order.qrCodeDownloaded) {
+          return res.status(400).json({ 
+            error: `QR code for order ${orderId} has not been downloaded yet. Download the QR code first.` 
+          });
+        }
+        
+        if (order.transferTxHash) {
+          return res.status(400).json({ 
+            message: `Order ${orderId} already has a token transfer transaction: ${order.transferTxHash}`,
+            transferTxHash: order.transferTxHash 
+          });
+        }
+        
+        // Import the token transfer processor
+        const { processTokenTransfers } = await import('./services/token-buying-order-filler-relay');
+        
+        // Process token transfers
+        await processTokenTransfers();
+        
+        // Get the updated order
+        const updatedOrder = getBuyingOrderById(orderId);
+        
+        if (updatedOrder?.transferTxHash) {
+          return res.status(200).json({ 
+            message: `Token transfer initiated successfully for order ${orderId}`,
+            transferTxHash: updatedOrder.transferTxHash
+          });
+        } else if (updatedOrder?.transferError) {
+          return res.status(500).json({ 
+            error: `Failed to initiate token transfer for order ${orderId}`,
+            errorMessage: updatedOrder.transferError
+          });
+        } else {
+          return res.status(202).json({ 
+            message: `Token transfer queued for order ${orderId}. Check status again shortly.`
           });
         }
       } catch (error) {

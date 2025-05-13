@@ -8,7 +8,8 @@ import {
   downloadBuyingOrderImage,
   fillBuyingOrder,
   checkFilledOrderStatus,
-  requestQRCodeDownload
+  requestQRCodeDownload,
+  manuallyTriggerTokenTransfer
 } from '../../services/marketplaceService';
 import { formatAddress, formatTimeAgo } from '../../utils/formatting';
 import { LoadingIcon } from '../Icons';
@@ -39,6 +40,12 @@ type BuyingOrder = {
   imageFileExt?: string;
   downloadStarted?: boolean;
   hasBeenDecrypted?: boolean;
+  // Token transfer tracking
+  qrCodeDownloaded?: boolean;
+  qrCodeDownloadedAt?: number;
+  transferTxHash?: string;
+  transferTimestamp?: number;
+  transferError?: string;
 };
 
 export default function BuyingOrderDetail() {
@@ -586,6 +593,37 @@ export default function BuyingOrderDetail() {
     localStorage.setItem('qrDownloadRequested', 'true');
   };
   
+  // Handle manual token transfer trigger
+  const handleManualTokenTransfer = async () => {
+    if (!order) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const result = await manuallyTriggerTokenTransfer(order.orderId);
+      
+      addNotification(
+        'Token transfer initiated',
+        NotificationType.SUCCESS,
+        'The token transfer has been initiated. Please refresh the page in a few moments to see the updated status.'
+      );
+      
+      // Refresh order details after a short delay
+      setTimeout(() => {
+        fetchOrderDetails();
+      }, 2000);
+    } catch (error) {
+      console.error('Error triggering token transfer:', error);
+      addNotification(
+        'Failed to trigger token transfer',
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg p-8 flex justify-center items-center">
@@ -1048,6 +1086,119 @@ export default function BuyingOrderDetail() {
                     'REQUEST QR CODE DOWNLOAD'
                   )}
                 </button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Token Transfer Section - Show if order is filled and QR code has been downloaded */}
+        {order?.status === 'filled' && order?.qrCodeDownloaded && (
+          <div className="mt-8 border-t-2 border-mictlai-gold/30 pt-6">
+            <h3 className="text-mictlai-turquoise font-pixel text-xl mb-4">TOKEN TRANSFER STATUS</h3>
+            
+            <div className="bg-black/30 p-4 border border-mictlai-gold/50">
+              {order.transferTxHash ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-green-500">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="font-pixel">Tokens have been transferred from escrow to buyer!</p>
+                  </div>
+                  
+                  <div className="text-mictlai-bone/70 text-sm mt-2">
+                    <p>Transaction Hash: <a 
+                      href={`https://basescan.org/tx/${order.transferTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-mictlai-turquoise hover:underline break-all"
+                    >
+                      {order.transferTxHash}
+                    </a></p>
+                    
+                    {order.transferTimestamp && (
+                      <p className="mt-1">Transfer Time: {new Date(order.transferTimestamp).toLocaleString()}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 p-3 border border-green-500/30 bg-green-900/20 text-green-500">
+                    <p className="flex items-center gap-2">
+                      <span>✓</span>
+                      <span>
+                        {order.tokenAmount} {order.token} has been sent from the escrow wallet to {isOwner ? 'your wallet' : 'the buyer\'s wallet'}.
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ) : order.transferError ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-mictlai-blood">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="font-pixel">There was an error transferring tokens from escrow to buyer</p>
+                  </div>
+                  
+                  <div className="mt-4 p-3 border border-mictlai-blood/30 bg-mictlai-blood/10 text-mictlai-blood/80">
+                    <p>Error: {order.transferError}</p>
+                    <p className="mt-2 text-sm">Please try again or contact support for assistance.</p>
+                  </div>
+                  
+                  <button
+                    onClick={handleManualTokenTransfer}
+                    disabled={isLoading}
+                    className="mt-2 px-4 py-2 bg-mictlai-gold text-black hover:bg-mictlai-gold/80 font-pixel flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoadingIcon className="w-4 h-4" />
+                        INITIATING TRANSFER...
+                      </>
+                    ) : (
+                      'TRY AGAIN'
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-mictlai-gold">
+                    <LoadingIcon className="w-5 h-5" />
+                    <p className="font-pixel">Waiting for token transfer from escrow to buyer</p>
+                  </div>
+                  
+                  <div className="mt-4 p-3 border border-mictlai-gold/30 bg-mictlai-gold/10 text-mictlai-gold/80">
+                    <p>The token transfer should be processed shortly. Please check back in a few moments.</p>
+                    {isOwner ? (
+                      <p className="mt-2">You will receive {order.tokenAmount} {order.token} to your wallet: {formatAddress(order.buyer, 6, 4)}</p>
+                    ) : (
+                      <p className="mt-2">The buyer will receive {order.tokenAmount} {order.token} to their wallet: {formatAddress(order.buyer, 6, 4)}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={fetchOrderDetails}
+                      className="px-4 py-2 bg-mictlai-gold/20 text-mictlai-gold hover:bg-mictlai-gold/30 font-pixel text-sm"
+                    >
+                      REFRESH STATUS
+                    </button>
+                    
+                    <button
+                      onClick={handleManualTokenTransfer}
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-mictlai-gold text-black hover:bg-mictlai-gold/80 font-pixel text-sm flex items-center justify-center gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <LoadingIcon className="w-4 h-4" />
+                          PROCESSING...
+                        </>
+                      ) : (
+                        'TRIGGER TRANSFER MANUALLY'
+                      )}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

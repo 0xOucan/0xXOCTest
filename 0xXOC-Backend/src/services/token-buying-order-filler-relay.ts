@@ -3,9 +3,193 @@ import { markOrderAsFilled } from '../action-providers/token-buying-order-filler
 import { getBuyingOrderById, buyingOrders } from '../action-providers/token-buying-order/utils';
 import { PendingTransaction } from '../utils/transaction-utils';
 import { BuyingOrder } from '../action-providers/token-buying-order/schemas';
+import { createWalletClient, http, createPublicClient, parseUnits, formatUnits } from 'viem';
+import { base } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Interval for checking transactions (milliseconds)
 const CHECK_INTERVAL = 20000; // 20 seconds
+
+/**
+ * Get the escrow wallet client for token transfers
+ */
+function getEscrowWalletClient() {
+  // Get the escrow wallet private key from environment
+  const escrowWalletPrivateKey = process.env.ESCROW_WALLET_PRIVATE_KEY || process.env.WALLET_PRIVATE_KEY || process.env.ESCROW_PRIVATE_KEY;
+  
+  if (!escrowWalletPrivateKey) {
+    throw new Error('ESCROW_WALLET_PRIVATE_KEY not found in environment variables');
+  }
+  
+  // Check if private key already starts with 0x
+  const privateKey = escrowWalletPrivateKey.startsWith('0x') 
+    ? escrowWalletPrivateKey 
+    : `0x${escrowWalletPrivateKey}`;
+  
+  // Create an account from the private key
+  const account = privateKeyToAccount(privateKey as `0x${string}`);
+  
+  // Create and return a wallet client
+  return createWalletClient({
+    account,
+    chain: base,
+    transport: http(base.rpcUrls.default.http[0]),
+  });
+}
+
+/**
+ * Get token address by symbol
+ */
+function getTokenAddress(tokenSymbol: string): string {
+  switch (tokenSymbol) {
+    case 'XOC':
+      return '0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf';
+    case 'MXNe':
+      return '0x269caE7Dc59803e5C596c95756faEeBb6030E0aF';
+    case 'USDC':
+      return '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+    default:
+      throw new Error(`Unknown token symbol: ${tokenSymbol}`);
+  }
+}
+
+/**
+ * Get token decimals by symbol
+ */
+function getTokenDecimals(tokenSymbol: string): number {
+  switch (tokenSymbol) {
+    case 'XOC':
+      return 18;
+    case 'MXNe':
+      return 6;
+    case 'USDC':
+      return 6;
+    default:
+      throw new Error(`Unknown token symbol: ${tokenSymbol}`);
+  }
+}
+
+/**
+ * Process token transfers from escrow wallet to buyers for completed orders
+ */
+async function processCompletedOrdersTokenTransfers() {
+  console.log('Processing token transfers for completed buying orders...');
+  
+  // Get all filled orders
+  const filledOrders = Array.from(buyingOrders.values()).filter(order => 
+    order.status === 'filled' && 
+    order.filledBy && 
+    order.qrCodeDownloaded === true && 
+    !order.transferTxHash // No transfer has been made yet
+  );
+  
+  if (filledOrders.length === 0) {
+    console.log('No filled orders waiting for token transfer');
+    return;
+  }
+  
+  console.log(`Found ${filledOrders.length} filled orders waiting for token transfer`);
+  
+  const escrowWalletClient = getEscrowWalletClient();
+  const baseClient = createPublicClient({
+    chain: base,
+    transport: http(base.rpcUrls.default.http[0]),
+  });
+  
+  // Import ERC20 ABI from constants
+  const { ERC20_ABI } = await import('../action-providers/token-buying-order-filler/constants');
+  
+  for (const order of filledOrders) {
+    try {
+      console.log(`Processing token transfer for order ${order.orderId}`);
+      
+      // Get token details
+      const tokenAddress = getTokenAddress(order.token);
+      const tokenDecimals = getTokenDecimals(order.token);
+      
+      // Validate token amount
+      if (isNaN(parseFloat(order.tokenAmount)) || parseFloat(order.tokenAmount) <= 0) {
+        console.error(`Invalid token amount for order ${order.orderId}: ${order.tokenAmount}`);
+        continue;
+      }
+      
+      // Convert token amount to wei
+      const amountInWei = parseUnits(order.tokenAmount, tokenDecimals);
+      
+      // Check escrow wallet balance
+      const escrowBalance = await baseClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'balanceOf',
+        args: [escrowWalletClient.account.address],
+      });
+      
+      if ((escrowBalance as bigint) < amountInWei) {
+        console.error(`Insufficient balance in escrow wallet for order ${order.orderId}. Required: ${amountInWei}, Available: ${escrowBalance}`);
+        
+        // Update order with error
+        const { updateBuyingOrderStatus } = await import('../action-providers/token-buying-order/utils');
+        updateBuyingOrderStatus(order.orderId, 'filled', {
+          transferError: `Insufficient balance in escrow wallet. Required: ${formatUnits(amountInWei, tokenDecimals)} ${order.token}, Available: ${formatUnits(escrowBalance as bigint, tokenDecimals)} ${order.token}`
+        });
+        
+        continue;
+      }
+      
+      // Encode the transfer function call
+      const { encodeFunctionData } = await import('viem');
+      
+      // Transfer tokens from escrow wallet to the buyer (order creator)
+      console.log(`Transferring ${order.tokenAmount} ${order.token} from escrow wallet to order creator (buyer) ${order.buyer}`);
+      
+      const data = encodeFunctionData({
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [order.buyer as `0x${string}`, amountInWei]
+      });
+      
+      // Send transaction
+      const txHash = await escrowWalletClient.writeContract({
+        address: tokenAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [order.buyer as `0x${string}`, amountInWei]
+      });
+      
+      console.log(`✅ Token transfer transaction sent: ${txHash}`);
+      
+      // Update order with transaction hash
+      const { updateBuyingOrderStatus } = await import('../action-providers/token-buying-order/utils');
+      updateBuyingOrderStatus(order.orderId, 'filled', {
+        transferTxHash: txHash,
+        transferTimestamp: Date.now()
+      });
+      
+      console.log(`Updated order ${order.orderId} with transfer transaction hash ${txHash}`);
+    } catch (error) {
+      console.error(`Error processing token transfer for order ${order.orderId}:`, error);
+      
+      // Create a more detailed error message
+      let errorMessage = error instanceof Error ? error.message : String(error);
+      if (error instanceof Error && error.stack) {
+        console.error('Error stack:', error.stack);
+      }
+      
+      console.error(`Failed to transfer ${order.tokenAmount} ${order.token} to buyer ${order.buyer} for order ${order.orderId}`);
+      
+      try {
+        // Update order with error
+        const { updateBuyingOrderStatus } = await import('../action-providers/token-buying-order/utils');
+        updateBuyingOrderStatus(order.orderId, 'filled', {
+          transferError: errorMessage
+        });
+        console.log(`Updated order ${order.orderId} with transfer error: ${errorMessage}`);
+      } catch (updateError) {
+        console.error(`Additional error when updating order status:`, updateError);
+      }
+    }
+  }
+}
 
 /**
  * Check for fill transactions that need to be processed
@@ -102,6 +286,9 @@ async function checkAndProcessFillTransactions() {
       }
     }
   }
+  
+  // Process token transfers for completed orders
+  await processCompletedOrdersTokenTransfers();
 }
 
 /**
@@ -127,6 +314,13 @@ export function startTokenBuyingOrderFillerRelay() {
     console.log('Stopping token buying order filler relay service...');
     clearInterval(intervalId);
   };
+}
+
+// Add a function to manually process token transfers (useful for testing)
+export async function processTokenTransfers() {
+  console.log('Manually processing token transfers for completed orders...');
+  await processCompletedOrdersTokenTransfers();
+  console.log('Manual token transfer processing completed');
 }
 
 // Add a function to manually trigger the relay check (useful for testing)
