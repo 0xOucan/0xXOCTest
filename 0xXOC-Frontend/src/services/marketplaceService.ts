@@ -648,3 +648,27 @@ export const validateOxxoQrForSellingOrder = (qrData: string, expectedMxnAmount:
     return { isValid: false, message: 'Invalid QR code format' };
   }
 };
+
+/**
+ * Request a manual token transfer for a completed fill
+ */
+export const requestManualTransferForFill = async (orderId: string, fillId: string): Promise<any> => {
+  try {
+    const response = await fetch(`${apiUrl}/api/selling-orders/${orderId}/fills/${fillId}/transfer-tokens`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error requesting manual token transfer:', error);
+    throw error;
+  }
+};

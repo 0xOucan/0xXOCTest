@@ -7,12 +7,14 @@ import {
   SellingOrder, 
   fillSellingOrder,
   validateOxxoQrForSellingOrder,
-  getSellingOrderFills
+  getSellingOrderFills,
+  requestManualTransferForFill
 } from '../../services/marketplaceService';
 import { formatAddress, formatTimeAgo } from '../../utils/formatting';
 import { LoadingIcon } from '../Icons';
 import { useNotification, NotificationType } from '../../utils/notification';
 import QrScanner from 'qr-scanner';
+import { apiUrl } from '../../config';
 
 export default function SellingOrderDetail() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -34,6 +36,9 @@ export default function SellingOrderDetail() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // New state for token transfer request
+  const [isLoading, setIsLoading] = useState(false);
   
   // Fetch order details on component mount
   React.useEffect(() => {
@@ -231,7 +236,7 @@ export default function SellingOrderDetail() {
       const updatedOrder = await getSellingOrderById(orderId);
       setOrder(updatedOrder);
       
-      const updatedFills = await getSellingOrderFills(orderId);
+      const updatedFills = await getSellingOrderFills(orderId || '');
       setFills(updatedFills);
       
       // Close the modal and reset form
@@ -280,6 +285,61 @@ export default function SellingOrderDetail() {
       case 'cancelled': return 'text-mictlai-blood';
       case 'expired': return 'text-mictlai-bone/50';
       default: return 'text-mictlai-bone';
+    }
+  };
+  
+  // Function to request token transfer
+  const requestTokenTransfer = async (orderId: string, fillId: string) => {
+    if (!orderId || !fillId) {
+      addNotification(
+        'Invalid request',
+        NotificationType.ERROR,
+        'Missing order or fill information'
+      );
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await requestManualTransferForFill(orderId, fillId);
+      addNotification(
+        'Token transfer request sent',
+        NotificationType.SUCCESS,
+        'The token transfer request has been submitted'
+      );
+      // Refresh fills data to show updated status
+      if (order && order.orderId) {
+        const fillsData = await getSellingOrderFills(order.orderId);
+        setFills(fillsData);
+      }
+    } catch (error) {
+      console.error("Error requesting token transfer:", error);
+      addNotification(
+        'Error requesting token transfer', 
+        NotificationType.ERROR,
+        error instanceof Error ? error.message : "Failed to request token transfer"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Update the getFillStatus function to better handle token transfer status
+  const getFillStatus = (fill: any) => {
+    if (fill.status === 'completed' && fill.transferCompleted) {
+      return 'Completed (Tokens Transferred)';
+    } else if (fill.status === 'completed' && !fill.transferCompleted) {
+      return 'Completed (Waiting for Token Transfer)';
+    } else if (fill.status === 'failed') {
+      return 'Failed';
+    } else if (fill.status === 'expired') {
+      return 'Expired';
+    } else if (fill.status === 'cancelled') {
+      return 'Cancelled';
+    } else if (fill.status === 'processing') {
+      return 'Processing';
+    } else {
+      return 'Pending';
     }
   };
   
@@ -540,20 +600,26 @@ export default function SellingOrderDetail() {
               {order.seller}
             </div>
             
-            <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
-              Transaction Hash
-            </div>
-            <div className="text-mictlai-turquoise break-all font-mono mb-2">
-              {order.txHash}
-            </div>
-            <a 
-              href={`https://basescan.org/tx/${order.txHash}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-block text-sm text-mictlai-gold hover:underline"
-            >
-              VIEW ON BASESCAN →
-            </a>
+            {order.txHash && (
+              <div>
+                <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
+                  Transaction Hash
+                </div>
+                <div className="text-mictlai-turquoise break-all font-mono mb-2">
+                  {order.txHash.startsWith('tx-') ? 'Pending confirmation...' : order.txHash}
+                </div>
+                {!order.txHash.startsWith('tx-') && (
+                  <a 
+                    href={`https://basescan.org/tx/${order.txHash}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block text-sm text-mictlai-gold hover:underline"
+                  >
+                    VIEW ON BASESCAN →
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
@@ -568,7 +634,7 @@ export default function SellingOrderDetail() {
                   <div className="flex justify-between">
                     <span className="text-mictlai-gold font-pixel">FILL #{fill.fillId}</span>
                     <span className={`text-sm font-pixel ${getStatusColorClass(fill.status)}`}>
-                      {formatStatus(fill.status)}
+                      {getFillStatus(fill)}
                     </span>
                   </div>
                   
@@ -576,7 +642,7 @@ export default function SellingOrderDetail() {
                     <div>
                       <div className="text-mictlai-bone/70 text-xs mb-1">Submitted By</div>
                       <div className="text-mictlai-bone text-sm font-mono">
-                        {formatAddress(fill.buyerAddress || 'Unknown')}
+                        {fill.filler ? formatAddress(fill.filler) : 'Unknown'}
                       </div>
                     </div>
                     
@@ -588,17 +654,119 @@ export default function SellingOrderDetail() {
                     </div>
                   </div>
                   
-                  {fill.txHash && (
+                  {(fill.onChainTxHash || fill.txHash) && (
                     <div className="mt-2">
                       <div className="text-mictlai-bone/70 text-xs mb-1">Transaction</div>
-                      <a 
-                        href={`https://basescan.org/tx/${fill.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-mictlai-turquoise text-sm hover:underline font-mono"
-                      >
-                        {formatAddress(fill.txHash)}
-                      </a>
+                      {(fill.onChainTxHash && !fill.onChainTxHash.startsWith('tx-')) ? (
+                        <a 
+                          href={`https://basescan.org/tx/${fill.onChainTxHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-mictlai-turquoise text-sm hover:underline font-mono"
+                        >
+                          {formatAddress(fill.onChainTxHash)}
+                        </a>
+                      ) : (fill.txHash && !fill.txHash.startsWith('tx-')) ? (
+                        <a 
+                          href={`https://basescan.org/tx/${fill.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-mictlai-turquoise text-sm hover:underline font-mono"
+                        >
+                          {formatAddress(fill.txHash)}
+                        </a>
+                      ) : (
+                        <span className="text-mictlai-bone/50 text-sm">
+                          Pending confirmation...
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Token Transfer Information - For completed fills */}
+                  {fill.status === 'completed' && (
+                    <div className="mt-3 border-t border-mictlai-gold/20 pt-3">
+                      <div className="text-mictlai-turquoise font-pixel text-sm mb-2">TOKEN TRANSFER</div>
+                      
+                      <div className="bg-black/30 p-2 border border-mictlai-turquoise/30">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-mictlai-bone/70 text-xs">From:</span>
+                          <a 
+                            href={`https://basescan.org/address/0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45`}
+                            target="_blank"
+                            rel="noopener noreferrer" 
+                            className="text-mictlai-bone/90 text-xs hover:underline font-mono"
+                          >
+                            Escrow Wallet (0x9c77...e45)
+                          </a>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-mictlai-bone/70 text-xs">To:</span>
+                          <a 
+                            href={`https://basescan.org/address/${fill.filler}`}
+                            target="_blank"
+                            rel="noopener noreferrer" 
+                            className="text-mictlai-bone/90 text-xs hover:underline font-mono"
+                          >
+                            {formatAddress(fill.filler || 'Unknown')}
+                          </a>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className="text-mictlai-bone/70 text-xs">Amount:</span>
+                          <span className="text-mictlai-turquoise text-xs font-bold">
+                            {order.amount} {order.token} {getTokenEmoji(order.token)}
+                          </span>
+                        </div>
+                        
+                        {fill.transferTxHash ? (
+                          <div className="mt-2 pt-1 border-t border-mictlai-bone/20">
+                            <a 
+                              href={`https://basescan.org/tx/${fill.transferTxHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-mictlai-turquoise text-xs hover:underline font-mono"
+                            >
+                              View Transfer Transaction
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="mt-2 pt-1 border-t border-mictlai-bone/20">
+                            <div className="flex items-center justify-between">
+                              <span className="text-mictlai-bone/50 text-xs">
+                                {fill.transferTxId ? 'Token transfer initiated...' : 'Tokens transferred automatically when fill is confirmed'}
+                              </span>
+                              
+                              {/* Add button to manually request transfer */}
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (orderId && fill.fillId) {
+                                    await requestTokenTransfer(orderId, fill.fillId);
+                                  } else {
+                                    addNotification(
+                                      'Invalid request',
+                                      NotificationType.ERROR,
+                                      'Missing order or fill information'
+                                    );
+                                  }
+                                }}
+                                className="px-1.5 py-0.5 text-2xs border border-mictlai-turquoise text-mictlai-turquoise hover:bg-mictlai-turquoise/10"
+                                disabled={isLoading}
+                              >
+                                {isLoading ? 'Processing...' : 'Request Transfer'}
+                              </button>
+                            </div>
+                            
+                            {fill.transferError && (
+                              <div className="mt-1 text-mictlai-blood text-xs">
+                                Error: {fill.transferError}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   

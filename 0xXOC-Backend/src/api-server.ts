@@ -22,7 +22,7 @@ import { startTokenBuyingOrderFillerRelay } from "./services/token-buying-order-
 import multer from "multer";
 import { saveUploadedFile, getFileById, deleteFile } from "./utils/file-storage";
 import path from "path";
-import { startTokenSellingOrderFillerRelay } from "./services/token-selling-order-filler-relay";
+import { startTokenSellingOrderFillerRelay, manuallyCheckFillTransactions, processCompletedFillsTokenTransfers } from './services/token-selling-order-filler-relay';
 import { 
   getFillById, 
   getFillsByOrderId, 
@@ -302,6 +302,23 @@ async function createServer() {
         // Update associated swap records if transaction is confirmed
         if (status === 'confirmed' && hash) {
           updateAssociatedSwapRecords(txId, status, hash);
+          
+          // Also update any selling order fill records
+          if (transaction.metadata?.type === 'fill_selling_order' && 
+              transaction.metadata?.fillId && 
+              transaction.metadata?.orderId) {
+            const fillId = transaction.metadata.fillId;
+            // Check if we can find the fill
+            const fill = getFillById(fillId);
+            
+            if (fill) {
+              // Update fill with blockchain transaction hash
+              updateFillStatus(fillId, fill.status, {
+                onChainTxHash: hash
+              });
+              console.log(`Updated fill ${fillId} with blockchain hash ${hash}`);
+            }
+          }
         }
         
         return res.json({ 
@@ -1207,10 +1224,64 @@ async function createServer() {
       }
     });
 
+    // Manually trigger token transfer for a fill
+    app.post('/api/selling-orders/:orderId/fills/:fillId/transfer-tokens', async (req, res) => {
+      try {
+        const { orderId, fillId } = req.params;
+        
+        console.log(`🔄 Manually triggering token transfer for fill ${fillId} of order ${orderId}`);
+        
+        // Get the fill details
+        const fill = getFillById(fillId);
+        
+        if (!fill) {
+          return res.status(404).json({ error: `Fill ${fillId} not found` });
+        }
+        
+        if (fill.orderId !== orderId) {
+          return res.status(400).json({ error: `Fill ${fillId} does not belong to order ${orderId}` });
+        }
+        
+        if (fill.status !== 'completed') {
+          return res.status(400).json({ 
+            error: `Fill ${fillId} is not completed (status: ${fill.status}), cannot transfer tokens yet` 
+          });
+        }
+        
+        if (fill.transferTxHash) {
+          return res.status(400).json({ 
+            message: `Fill ${fillId} already has a token transfer transaction: ${fill.transferTxHash}`,
+            transferTxHash: fill.transferTxHash 
+          });
+        }
+        
+        // Manually trigger a check of all transactions, which will process this fill if needed
+        await manuallyCheckFillTransactions();
+        
+        // Get the updated fill
+        const updatedFill = getFillById(fillId);
+        
+        if (updatedFill?.transferTxHash) {
+          return res.status(200).json({ 
+            message: `Token transfer initiated successfully for fill ${fillId}`,
+            transferTxHash: updatedFill.transferTxHash
+          });
+        } else {
+          return res.status(500).json({ 
+            error: `Failed to initiate token transfer for fill ${fillId}`,
+            errorMessage: updatedFill?.transferError || 'Unknown error'
+          });
+        }
+      } catch (error) {
+        console.error('Error manually triggering token transfer:', error);
+        return res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
     // Start the server
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
-      console.log(`🚀 API server running at http://localhost:${PORT}`);
+      console.log(`�� API server running at http://localhost:${PORT}`);
       
       // Handle graceful shutdown
       process.on('SIGINT', () => {
