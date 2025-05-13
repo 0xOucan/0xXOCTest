@@ -223,31 +223,31 @@ export default function OrdersDisplay() {
   // Get status color class
   const getStatusColorClass = (status: string) => {
     switch (status) {
-      case 'active': return 'text-mictlai-turquoise';
-      case 'pending': return 'text-mictlai-gold';
+      case 'active': return 'text-base-blue';
+      case 'pending': return 'text-base-blue-light';
       case 'filled': return 'text-green-500';
-      case 'cancelled': return 'text-mictlai-blood';
-      case 'expired': return 'text-mictlai-bone/50';
-      default: return 'text-mictlai-bone';
+      case 'cancelled': return 'text-red-500';
+      case 'expired': return 'text-light-secondary dark:text-dark-secondary';
+      default: return 'text-light-text dark:text-dark-text';
     }
   };
   
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg overflow-hidden">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+        <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
           MARKETPLACE ORDERS
         </h2>
         
         <button 
           onClick={fetchOrders}
-          className="p-1.5 border-2 border-mictlai-gold/70 hover:bg-mictlai-blood transition-colors shadow-pixel"
+          className="p-1.5 border-2 border-base-blue/70 hover:bg-red-500 transition-colors shadow-pixel"
           title="Refresh orders"
         >
           {loadingSellingOrders || loadingBuyingOrders ? (
-            <LoadingIcon className="w-4 h-4 text-mictlai-gold" />
+            <LoadingIcon className="w-4 h-4 text-base-blue dark:text-base-blue-light" />
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 text-mictlai-gold">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 text-base-blue dark:text-base-blue-light">
               <rect x="7" y="1" width="2" height="2" fill="currentColor" />
               <rect x="9" y="3" width="2" height="2" fill="currentColor" />
               <rect x="11" y="5" width="2" height="2" fill="currentColor" />
@@ -266,12 +266,12 @@ export default function OrdersDisplay() {
       </div>
       
       {/* Tabs */}
-      <div className="flex border-b-3 border-mictlai-gold/50">
+      <div className="flex border-b-3 border-base-blue/50">
         <button 
           className={`flex-1 py-2 font-pixel text-sm ${
             activeTab === 'sell' 
-            ? 'bg-mictlai-gold/20 text-mictlai-gold border-b-3 border-mictlai-gold' 
-            : 'text-mictlai-bone/70 hover:bg-black/30'
+            ? 'bg-base-blue/20 text-base-blue dark:text-base-blue-light border-b-3 border-base-blue' 
+            : 'text-light-secondary dark:text-dark-secondary hover:bg-light-card dark:hover:bg-dark-card'
           }`}
           onClick={() => setActiveTab('sell')}
         >
@@ -280,8 +280,8 @@ export default function OrdersDisplay() {
         <button 
           className={`flex-1 py-2 font-pixel text-sm ${
             activeTab === 'buy' 
-            ? 'bg-mictlai-gold/20 text-mictlai-gold border-b-3 border-mictlai-gold' 
-            : 'text-mictlai-bone/70 hover:bg-black/30'
+            ? 'bg-base-blue/20 text-base-blue dark:text-base-blue-light border-b-3 border-base-blue' 
+            : 'text-light-secondary dark:text-dark-secondary hover:bg-light-card dark:hover:bg-dark-card'
           }`}
           onClick={() => setActiveTab('buy')}
         >
@@ -290,14 +290,14 @@ export default function OrdersDisplay() {
       </div>
       
       {/* Filters */}
-      <div className="bg-black/40 p-3 border-b-3 border-mictlai-gold/30 flex flex-wrap items-center gap-4">
+      <div className="bg-light-card dark:bg-dark-card/40 p-3 border-b-3 border-base-blue/30 flex flex-wrap items-center gap-4">
         {/* Token filter */}
         <div className="space-y-1">
-          <label className="text-xs text-mictlai-bone/70 font-pixel">TOKEN</label>
+          <label className="text-xs text-light-secondary dark:text-dark-secondary font-pixel">TOKEN</label>
           <select 
             value={tokenFilter}
             onChange={(e) => setTokenFilter(e.target.value as any)}
-            className="bg-black border-2 border-mictlai-bone/30 text-mictlai-bone py-1 px-2 font-pixel text-sm focus:outline-none focus:border-mictlai-gold"
+            className="bg-light-card dark:bg-dark-card border-2 border-light-border dark:border-dark-border text-light-text dark:text-dark-text py-1 px-2 font-pixel text-sm focus:outline-none focus:border-base-blue"
           >
             <option value="ALL">ALL TOKENS</option>
             <option value="XOC">XOC 🍫</option>
@@ -308,11 +308,11 @@ export default function OrdersDisplay() {
         
         {/* Status filter */}
         <div className="space-y-1">
-          <label className="text-xs text-mictlai-bone/70 font-pixel">STATUS</label>
+          <label className="text-xs text-light-secondary dark:text-dark-secondary font-pixel">STATUS</label>
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-black border-2 border-mictlai-bone/30 text-mictlai-bone py-1 px-2 font-pixel text-sm focus:outline-none focus:border-mictlai-gold"
+            className="bg-light-card dark:bg-dark-card border-2 border-light-border dark:border-dark-border text-light-text dark:text-dark-text py-1 px-2 font-pixel text-sm focus:outline-none focus:border-base-blue"
           >
             <option value="active">ACTIVE</option>
             <option value="pending">PENDING</option>
@@ -325,19 +325,19 @@ export default function OrdersDisplay() {
       </div>
       
       {/* Content */}
-      <div className="bg-mictlai-obsidian p-4">
+      <div className="bg-light-surface dark:bg-dark-surface p-4">
         {activeTab === 'sell' ? (
           <div className="space-y-4">
-            <h3 className="text-mictlai-gold font-pixel text-sm border-b border-mictlai-gold/30 pb-1">
+            <h3 className="text-base-blue dark:text-base-blue-light font-pixel text-sm border-b border-base-blue/30 pb-1">
               SELLING ORDERS ({sellingOrders.length})
             </h3>
             
             {loadingSellingOrders ? (
               <div className="flex justify-center py-8">
-                <LoadingIcon className="w-8 h-8 text-mictlai-gold" />
+                <LoadingIcon className="w-8 h-8 text-base-blue dark:text-base-blue-light" />
               </div>
             ) : sellingOrders.length === 0 ? (
-              <div className="text-center text-mictlai-bone/50 font-pixel py-8">
+              <div className="text-center text-light-secondary dark:text-dark-secondary font-pixel py-8">
                 NO SELLING ORDERS FOUND
               </div>
             ) : (
@@ -345,34 +345,34 @@ export default function OrdersDisplay() {
                 {sellingOrders.map(order => (
                   <div 
                     key={order.orderId} 
-                    className="border-3 border-mictlai-gold/30 shadow-pixel bg-black p-3 cursor-pointer hover:border-mictlai-gold/50 transition-colors"
+                    className="border-3 border-base-blue/30 shadow-pixel bg-light-card dark:bg-dark-card p-3 cursor-pointer hover:border-base-blue/50 transition-colors"
                     onClick={() => handleOrderClick(order.orderId, 'sell')}
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-xl">{getTokenEmoji(order.token)}</span>
-                          <span className="text-mictlai-gold font-pixel">{order.token}</span>
-                          <span className="text-mictlai-bone font-pixel">{order.amount}</span>
+                          <span className="text-base-blue dark:text-base-blue-light font-pixel">{order.token}</span>
+                          <span className="text-light-text dark:text-dark-text font-pixel">{order.amount}</span>
                         </div>
-                        <div className="text-mictlai-bone/70 font-pixel text-xs mb-1">
+                        <div className="text-light-secondary dark:text-dark-secondary font-pixel text-xs mb-1">
                           Seller: {formatAddress(order.seller, 6, 4)}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs font-pixel ${getStatusColorClass(order.status)}`}>
                             {formatStatus(order.status)}
                           </span>
-                          <span className="text-mictlai-bone/50 font-pixel text-xs">
+                          <span className="text-light-secondary dark:text-dark-secondary font-pixel text-xs">
                             {formatTimeAgo(order.createdAt)}
                           </span>
                         </div>
                       </div>
                       
                       <div className="text-right">
-                        <div className="text-mictlai-bone/70 font-pixel text-xs mb-1">
+                        <div className="text-light-secondary dark:text-dark-secondary font-pixel text-xs mb-1">
                           Expected MXN
                         </div>
-                        <div className="text-mictlai-gold font-pixel font-bold">
+                        <div className="text-base-blue dark:text-base-blue-light font-pixel font-bold">
                           💰 {order.mxnAmount || '---'}
                         </div>
                         
@@ -384,7 +384,7 @@ export default function OrdersDisplay() {
                               handleCancelOrder(order.orderId, 'sell');
                             }}
                             disabled={isCancelling === order.orderId}
-                            className="mt-2 border-2 border-mictlai-blood text-mictlai-blood text-xs font-pixel py-1 px-2 hover:bg-mictlai-blood/20 transition-colors"
+                            className="mt-2 border-2 border-red-500 text-red-500 text-xs font-pixel py-1 px-2 hover:bg-red-500/20 transition-colors"
                           >
                             {isCancelling === order.orderId ? 'CANCELLING...' : 'CANCEL'}
                           </button>
@@ -398,16 +398,16 @@ export default function OrdersDisplay() {
           </div>
         ) : (
           <div className="space-y-4">
-            <h3 className="text-mictlai-gold font-pixel text-sm border-b border-mictlai-gold/30 pb-1">
+            <h3 className="text-base-blue dark:text-base-blue-light font-pixel text-sm border-b border-base-blue/30 pb-1">
               BUYING ORDERS ({buyingOrders.length})
             </h3>
             
             {loadingBuyingOrders ? (
               <div className="flex justify-center py-8">
-                <LoadingIcon className="w-8 h-8 text-mictlai-gold" />
+                <LoadingIcon className="w-8 h-8 text-base-blue dark:text-base-blue-light" />
               </div>
             ) : buyingOrders.length === 0 ? (
-              <div className="text-center text-mictlai-bone/50 font-pixel py-8">
+              <div className="text-center text-light-secondary dark:text-dark-secondary font-pixel py-8">
                 NO BUYING ORDERS FOUND
               </div>
             ) : (
@@ -415,37 +415,37 @@ export default function OrdersDisplay() {
                 {buyingOrders.map(order => (
                   <div 
                     key={order.orderId} 
-                    className="border-3 border-mictlai-gold/30 shadow-pixel bg-black p-3 cursor-pointer hover:border-mictlai-gold/50 transition-colors"
+                    className="border-3 border-base-blue/30 shadow-pixel bg-light-card dark:bg-dark-card p-3 cursor-pointer hover:border-base-blue/50 transition-colors"
                     onClick={() => handleOrderClick(order.orderId, 'buy')}
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-xl">{getTokenEmoji(order.token)}</span>
-                          <span className="text-mictlai-gold font-pixel">{order.token}</span>
-                          <span className="text-mictlai-bone font-pixel">{order.tokenAmount}</span>
+                          <span className="text-base-blue dark:text-base-blue-light font-pixel">{order.token}</span>
+                          <span className="text-light-text dark:text-dark-text font-pixel">{order.tokenAmount}</span>
                         </div>
-                        <div className="text-mictlai-bone/70 font-pixel text-xs mb-1">
+                        <div className="text-light-secondary dark:text-dark-secondary font-pixel text-xs mb-1">
                           Buyer: {formatAddress(order.buyer, 6, 4)}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs font-pixel ${getStatusColorClass(order.status)}`}>
                             {formatStatus(order.status)}
                           </span>
-                          <span className="text-mictlai-bone/50 font-pixel text-xs">
+                          <span className="text-light-secondary dark:text-dark-secondary font-pixel text-xs">
                             {formatTimeAgo(order.createdAt)}
                           </span>
                         </div>
                       </div>
                       
                       <div className="text-right">
-                        <div className="text-mictlai-bone/70 font-pixel text-xs mb-1">
+                        <div className="text-light-secondary dark:text-dark-secondary font-pixel text-xs mb-1">
                           MXN Amount
                         </div>
-                        <div className="text-mictlai-gold font-pixel font-bold">
+                        <div className="text-base-blue dark:text-base-blue-light font-pixel font-bold">
                           💰 {order.mxnAmount}
                         </div>
-                        <div className="text-mictlai-bone/50 font-pixel text-xs mt-1">
+                        <div className="text-light-secondary dark:text-dark-secondary font-pixel text-xs mt-1">
                           Ref: {order.referenceCode}
                         </div>
                         
@@ -457,7 +457,7 @@ export default function OrdersDisplay() {
                               handleCancelOrder(order.orderId, 'buy');
                             }}
                             disabled={isCancelling === order.orderId}
-                            className="mt-2 border-2 border-mictlai-blood text-mictlai-blood text-xs font-pixel py-1 px-2 hover:bg-mictlai-blood/20 transition-colors"
+                            className="mt-2 border-2 border-red-500 text-red-500 text-xs font-pixel py-1 px-2 hover:bg-red-500/20 transition-colors"
                           >
                             {isCancelling === order.orderId ? 'CANCELLING...' : 'CANCEL'}
                           </button>

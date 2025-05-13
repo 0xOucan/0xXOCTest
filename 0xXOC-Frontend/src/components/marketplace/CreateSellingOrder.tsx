@@ -98,65 +98,65 @@ export default function CreateSellingOrder() {
   };
   
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg overflow-hidden">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+        <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
           SELL TOKENS
         </h2>
       </div>
       
       <div className="p-4">
         {!isConnected ? (
-          <div className="text-center text-mictlai-bone/80 font-pixel py-4">
+          <div className="text-center text-light-secondary dark:text-dark-secondary font-pixel py-4">
             CONNECT YOUR WALLET TO CREATE SELLING ORDERS
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Token selection */}
             <div className="space-y-2">
-              <label className="block text-mictlai-bone font-pixel text-sm">
+              <label className="block text-light-text dark:text-dark-text font-pixel text-sm">
                 TOKEN TO SELL
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <div className={`
                   border-3 p-3 ${formData.token === 'XOC' 
-                    ? 'border-mictlai-gold bg-mictlai-gold/20' 
-                    : 'border-mictlai-bone/30 hover:border-mictlai-bone/50'} 
+                    ? 'border-base-blue bg-base-blue/20' 
+                    : 'border-light-border dark:border-dark-border hover:border-base-blue/50'} 
                   cursor-pointer flex items-center justify-center shadow-pixel
                 `}
                   onClick={() => setFormData(prev => ({ ...prev, token: 'XOC' }))}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">🍫</div>
-                    <div className="font-pixel text-mictlai-bone text-sm">XOC</div>
+                    <div className="font-pixel text-light-text dark:text-dark-text text-sm">XOC</div>
                   </div>
                 </div>
                 
                 <div className={`
                   border-3 p-3 ${formData.token === 'MXNe' 
-                    ? 'border-mictlai-gold bg-mictlai-gold/20' 
-                    : 'border-mictlai-bone/30 hover:border-mictlai-bone/50'} 
+                    ? 'border-base-blue bg-base-blue/20' 
+                    : 'border-light-border dark:border-dark-border hover:border-base-blue/50'} 
                   cursor-pointer flex items-center justify-center shadow-pixel
                 `}
                   onClick={() => setFormData(prev => ({ ...prev, token: 'MXNe' }))}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">🪙</div>
-                    <div className="font-pixel text-mictlai-bone text-sm">MXNe</div>
+                    <div className="font-pixel text-light-text dark:text-dark-text text-sm">MXNe</div>
                   </div>
                 </div>
                 
                 <div className={`
                   border-3 p-3 ${formData.token === 'USDC' 
-                    ? 'border-mictlai-gold bg-mictlai-gold/20' 
-                    : 'border-mictlai-bone/30 hover:border-mictlai-bone/50'} 
+                    ? 'border-base-blue bg-base-blue/20' 
+                    : 'border-light-border dark:border-dark-border hover:border-base-blue/50'} 
                   cursor-pointer flex items-center justify-center shadow-pixel
                 `}
                   onClick={() => setFormData(prev => ({ ...prev, token: 'USDC' }))}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">💵</div>
-                    <div className="font-pixel text-mictlai-bone text-sm">USDC</div>
+                    <div className="font-pixel text-light-text dark:text-dark-text text-sm">USDC</div>
                   </div>
                 </div>
               </div>
@@ -164,10 +164,10 @@ export default function CreateSellingOrder() {
             
             {/* Token amount */}
             <div className="space-y-2">
-              <label htmlFor="amount" className="block text-mictlai-bone font-pixel text-sm">
+              <label htmlFor="amount" className="block text-light-text dark:text-dark-text font-pixel text-sm">
                 TOKEN AMOUNT
               </label>
-              <div className="border-3 border-mictlai-bone/30 focus-within:border-mictlai-gold/70 shadow-pixel bg-black">
+              <div className="border-3 border-light-border dark:border-dark-border focus-within:border-base-blue/70 shadow-pixel bg-light-card dark:bg-dark-card">
                 <input
                   type="text"
                   id="amount"
@@ -175,17 +175,17 @@ export default function CreateSellingOrder() {
                   value={formData.amount}
                   onChange={handleChange}
                   placeholder="100.00"
-                  className="w-full p-3 bg-transparent text-mictlai-bone font-pixel focus:outline-none"
+                  className="w-full p-3 bg-transparent text-light-text dark:text-dark-text font-pixel focus:outline-none"
                 />
               </div>
             </div>
             
             {/* Expected MXN amount */}
             <div className="space-y-2">
-              <label htmlFor="mxnAmount" className="block text-mictlai-bone font-pixel text-sm">
+              <label htmlFor="mxnAmount" className="block text-light-text dark:text-dark-text font-pixel text-sm">
                 EXPECTED MXN AMOUNT 💰
               </label>
-              <div className="border-3 border-mictlai-bone/30 focus-within:border-mictlai-gold/70 shadow-pixel bg-black">
+              <div className="border-3 border-light-border dark:border-dark-border focus-within:border-base-blue/70 shadow-pixel bg-light-card dark:bg-dark-card">
                 <input
                   type="text"
                   id="mxnAmount"
@@ -193,20 +193,20 @@ export default function CreateSellingOrder() {
                   value={formData.mxnAmount}
                   onChange={handleChange}
                   placeholder="2000.00"
-                  className="w-full p-3 bg-transparent text-mictlai-bone font-pixel focus:outline-none"
+                  className="w-full p-3 bg-transparent text-light-text dark:text-dark-text font-pixel focus:outline-none"
                 />
               </div>
-              <p className="text-mictlai-bone/50 font-pixel text-xs">
+              <p className="text-light-secondary dark:text-dark-secondary font-pixel text-xs">
                 AMOUNT OF MXN YOU EXPECT TO RECEIVE FOR YOUR TOKENS
               </p>
             </div>
             
             {/* Memo (optional) */}
             <div className="space-y-2">
-              <label htmlFor="memo" className="block text-mictlai-bone font-pixel text-sm">
+              <label htmlFor="memo" className="block text-light-text dark:text-dark-text font-pixel text-sm">
                 MEMO (OPTIONAL)
               </label>
-              <div className="border-3 border-mictlai-bone/30 focus-within:border-mictlai-gold/70 shadow-pixel bg-black">
+              <div className="border-3 border-light-border dark:border-dark-border focus-within:border-base-blue/70 shadow-pixel bg-light-card dark:bg-dark-card">
                 <textarea
                   id="memo"
                   name="memo"
@@ -214,7 +214,7 @@ export default function CreateSellingOrder() {
                   onChange={handleChange}
                   placeholder="Additional information for this order"
                   rows={3}
-                  className="w-full p-3 bg-transparent text-mictlai-bone font-pixel focus:outline-none"
+                  className="w-full p-3 bg-transparent text-light-text dark:text-dark-text font-pixel focus:outline-none"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function CreateSellingOrder() {
             <button
               type="submit"
               disabled={isSubmitting || !formData.token || !formData.amount || !formData.mxnAmount}
-              className="w-full border-3 border-mictlai-gold py-3 font-pixel text-mictlai-gold hover:bg-mictlai-gold/20 focus:bg-mictlai-gold/30 shadow-pixel disabled:border-mictlai-bone/30 disabled:text-mictlai-bone/30 disabled:hover:bg-transparent transition-all"
+              className="w-full border-3 border-base-blue py-3 font-pixel text-base-blue dark:text-base-blue-light hover:bg-base-blue/20 focus:bg-base-blue/30 shadow-pixel disabled:border-light-border dark:disabled:border-dark-border disabled:text-light-secondary dark:disabled:text-dark-secondary disabled:hover:bg-transparent transition-all"
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
@@ -239,9 +239,9 @@ export default function CreateSellingOrder() {
         
         {/* Response display */}
         {response && (
-          <div className="mt-4 border-3 border-mictlai-turquoise/50 p-3 shadow-pixel bg-black">
-            <h3 className="text-mictlai-turquoise font-pixel text-sm mb-2">RESPONSE:</h3>
-            <div className="text-mictlai-bone/80 font-pixel text-xs overflow-auto max-h-32">
+          <div className="mt-4 border-3 border-base-blue/50 p-3 shadow-pixel bg-light-card dark:bg-dark-card">
+            <h3 className="text-base-blue dark:text-base-blue-light font-pixel text-sm mb-2">RESPONSE:</h3>
+            <div className="text-light-text dark:text-dark-text/80 font-pixel text-xs overflow-auto max-h-32">
               {response}
             </div>
           </div>

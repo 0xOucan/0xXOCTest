@@ -49,19 +49,19 @@ export default function MarketplacePage() {
   
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold font-pixel text-mictlai-gold mb-6 text-center">
+      <h1 className="text-2xl font-bold font-pixel text-base-blue dark:text-base-blue-light mb-6 text-center">
         TOKEN MARKETPLACE
       </h1>
       
       {/* Tab navigation - hide on detail pages */}
       {!isDetailPage && (
         <div className="flex justify-center mb-6">
-          <div className="inline-flex border-3 border-mictlai-gold shadow-pixel">
+          <div className="inline-flex border-3 border-base-blue shadow-pixel">
             <button
               className={`px-4 py-2 font-pixel ${
                 activeTab === 'orders' 
-                  ? 'bg-mictlai-gold text-black'
-                  : 'bg-black text-mictlai-gold hover:bg-mictlai-gold/20'
+                  ? 'bg-base-blue text-white'
+                  : 'bg-light-card dark:bg-dark-card text-base-blue dark:text-base-blue-light hover:bg-base-blue/20'
               }`}
               onClick={() => handleTabChange('orders')}
             >
@@ -70,8 +70,8 @@ export default function MarketplacePage() {
             <button
               className={`px-4 py-2 font-pixel ${
                 activeTab === 'sell' 
-                  ? 'bg-mictlai-gold text-black'
-                  : 'bg-black text-mictlai-gold hover:bg-mictlai-gold/20'
+                  ? 'bg-base-blue text-white'
+                  : 'bg-light-card dark:bg-dark-card text-base-blue dark:text-base-blue-light hover:bg-base-blue/20'
               }`}
               onClick={() => handleTabChange('sell')}
             >
@@ -80,8 +80,8 @@ export default function MarketplacePage() {
             <button
               className={`px-4 py-2 font-pixel ${
                 activeTab === 'buy' 
-                  ? 'bg-mictlai-gold text-black'
-                  : 'bg-black text-mictlai-gold hover:bg-mictlai-gold/20'
+                  ? 'bg-base-blue text-white'
+                  : 'bg-light-card dark:bg-dark-card text-base-blue dark:text-base-blue-light hover:bg-base-blue/20'
               }`}
               onClick={() => handleTabChange('buy')}
             >

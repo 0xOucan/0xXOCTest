@@ -329,13 +329,13 @@ export default function TransactionMonitor() {
 
     return (
       <div className="fixed bottom-16 right-4 z-50 max-w-lg" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-        <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg pixel-panel w-96">
-          <div className="p-3 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-            <h3 className="text-sm font-pixel text-mictlai-gold flex items-center space-x-2">
+        <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg pixel-panel w-96">
+          <div className="p-3 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+            <h3 className="text-sm font-pixel text-base-blue dark:text-base-blue-light flex items-center space-x-2">
               <span className="mr-2">📡</span>
               <span>TRANSACTION MONITOR</span>
               {isProcessing && (
-                <svg className="animate-spin ml-2 h-4 w-4 text-mictlai-turquoise" viewBox="0 0 24 24">
+                <svg className="animate-spin ml-2 h-4 w-4 text-base-blue" viewBox="0 0 24 24">
                   <circle 
                     className="opacity-25" 
                     cx="12" 
@@ -359,7 +359,7 @@ export default function TransactionMonitor() {
                   setIsMinimized(!isMinimized);
                   setForceVisible(false);
                 }}
-                className="px-2 py-1 border border-mictlai-gold/50 text-mictlai-gold hover:bg-mictlai-gold/20"
+                className="px-2 py-1 border border-base-blue/50 text-base-blue dark:text-base-blue-light hover:bg-base-blue/20"
               >
                 {isMinimized ? '+' : '-'}
               </button>
@@ -369,11 +369,11 @@ export default function TransactionMonitor() {
           {!isMinimized && (
             <div className="max-h-80 overflow-y-auto">
               {networkError && (
-                <div className="p-3 border-b border-mictlai-blood bg-black text-mictlai-blood font-pixel text-xs">
+                <div className="p-3 border-b border-red-500 bg-light-card dark:bg-dark-card text-red-500 font-pixel text-xs">
                   <strong>NETWORK ERROR:</strong> {networkError}
                   <button 
                     onClick={() => ensureCorrectNetwork()}
-                    className="ml-2 px-2 py-0.5 border border-mictlai-blood hover:bg-mictlai-blood/20 text-xs"
+                    className="ml-2 px-2 py-0.5 border border-red-500 hover:bg-red-500/20 text-xs"
                   >
                     RETRY
                   </button>
@@ -381,32 +381,32 @@ export default function TransactionMonitor() {
               )}
               
               {pendingTransactions.length > 0 && (
-                <div className="p-3 border-b-3 border-mictlai-gold/30">
-                  <h4 className="font-pixel text-mictlai-turquoise text-xs mb-2">PENDING TRANSACTIONS</h4>
+                <div className="p-3 border-b-3 border-base-blue/30">
+                  <h4 className="font-pixel text-base-blue dark:text-base-blue-light text-xs mb-2">PENDING TRANSACTIONS</h4>
                   <div className="space-y-2">
                     {pendingTransactions.map((tx) => (
-                      <div key={tx.id} className="border-3 border-mictlai-gold/30 p-2 shadow-pixel bg-black">
+                      <div key={tx.id} className="border-3 border-base-blue/30 p-2 shadow-pixel bg-light-card dark:bg-dark-card">
                         <div className="flex justify-between items-start mb-1">
-                          <span className="font-pixel text-mictlai-gold text-xs">
+                          <span className="font-pixel text-base-blue dark:text-base-blue-light text-xs">
                             {(tx.metadata as any)?.description || tx.metadata?.dataType || 'Transaction'}
                           </span>
                           <div className="flex items-center">
                             <span 
                               className={`inline-block h-2 w-2 ${
-                                tx.status === 'submitted' ? 'bg-mictlai-turquoise' : 'bg-mictlai-gold'
+                                tx.status === 'submitted' ? 'bg-base-blue' : 'bg-base-blue-light'
                               } mr-1 animate-pulse`}
                             ></span>
-                            <span className="text-mictlai-bone/70 text-xs font-pixel">
+                            <span className="text-light-secondary dark:text-dark-secondary text-xs font-pixel">
                               {tx.status === 'pending' ? 'PENDING' : 'SUBMITTED'}
                             </span>
                           </div>
                         </div>
-                        <div className="text-mictlai-bone/60 text-xs font-pixel">
+                        <div className="text-light-secondary dark:text-dark-secondary text-xs font-pixel">
                           {tx.to ? `TO: ${tx.to.substring(0, 10)}...` : ''}
                           {tx.value ? ` | VALUE: ${tx.value}` : ''}
                         </div>
                         <div className="flex justify-between items-center mt-1 text-xs font-pixel">
-                          <span className="text-mictlai-bone/60">
+                          <span className="text-light-secondary dark:text-dark-secondary">
                             {/* Metadata info */}
                             {tx.metadata?.dataType ? `TYPE: ${tx.metadata.dataType.toUpperCase()}` : ''}
                             {tx.metadata?.orderId ? ` | ORDER ID: ${tx.metadata.orderId.substring(0, 6)}...` : ''}
@@ -417,7 +417,7 @@ export default function TransactionMonitor() {
                               href={getExplorerLink(tx)} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-mictlai-turquoise hover:text-mictlai-gold"
+                              className="text-base-blue hover:text-base-blue-light"
                             >
                               TX: {formatTxHash(tx.hash)}
                             </a>
@@ -431,7 +431,7 @@ export default function TransactionMonitor() {
                             <button
                               onClick={() => handlePostToMarketplace(tx)}
                               disabled={processingTx === tx.id}
-                              className="w-full bg-mictlai-gold text-black font-pixel text-xs py-1.5 px-3 hover:bg-mictlai-gold/80 transition-colors flex items-center justify-center gap-2"
+                              className="w-full bg-base-blue text-light-card dark:text-dark-card font-pixel text-xs py-1.5 px-3 hover:bg-base-blue/80 transition-colors flex items-center justify-center gap-2"
                             >
                               {processingTx === tx.id ? (
                                 <>
@@ -452,39 +452,39 @@ export default function TransactionMonitor() {
               
               {completedTransactions.length > 0 && (
                 <div className="p-3">
-                  <h4 className="font-pixel text-mictlai-turquoise text-xs mb-2">COMPLETED TRANSACTIONS</h4>
+                  <h4 className="font-pixel text-base-blue dark:text-base-blue-light text-xs mb-2">COMPLETED TRANSACTIONS</h4>
                   <div className="space-y-2">
                     {completedTransactions.slice(0, 5).map((tx) => (
                       <div 
                         key={tx.id} 
-                        className={`border-3 p-2 shadow-pixel bg-black ${
+                        className={`border-3 p-2 shadow-pixel bg-light-card dark:bg-dark-card ${
                           tx.status === 'confirmed' 
-                            ? 'border-mictlai-turquoise/30' 
+                            ? 'border-base-blue/30' 
                             : tx.status === 'failed' 
-                              ? 'border-mictlai-blood/30' 
-                              : 'border-mictlai-bone/30'
+                              ? 'border-red-500/30' 
+                              : 'border-light-secondary dark:border-dark-secondary/30'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-1">
-                          <span className="font-pixel text-mictlai-bone text-xs">
+                          <span className="font-pixel text-light-secondary dark:text-dark-secondary text-xs">
                             {(tx.metadata as any)?.description || tx.metadata?.dataType || 'Transaction'}
                           </span>
                           <div className="flex items-center">
                             <span 
                               className={`inline-block h-2 w-2 ${
                                 tx.status === 'confirmed' 
-                                  ? 'bg-mictlai-turquoise' 
+                                  ? 'bg-base-blue' 
                                   : tx.status === 'failed' 
-                                    ? 'bg-mictlai-blood' 
-                                    : 'bg-mictlai-bone'
+                                    ? 'bg-red-500' 
+                                    : 'bg-light-secondary dark:bg-dark-secondary'
                               } mr-1`}
                             ></span>
                             <span className={`text-xs font-pixel ${
                               tx.status === 'confirmed' 
-                                ? 'text-mictlai-turquoise' 
+                                ? 'text-base-blue' 
                                 : tx.status === 'failed' 
-                                  ? 'text-mictlai-blood' 
-                                  : 'text-mictlai-bone/70'
+                                  ? 'text-red-500' 
+                                  : 'text-light-secondary dark:text-dark-secondary'
                             }`}>
                               {tx.status.toUpperCase()}
                             </span>
@@ -492,7 +492,7 @@ export default function TransactionMonitor() {
                         </div>
                         
                         {/* Transaction content */}
-                        <div className="text-mictlai-bone/60 text-xs font-pixel">
+                        <div className="text-light-secondary dark:text-dark-secondary text-xs font-pixel">
                           {tx.to ? `TO: ${tx.to.substring(0, 10)}...` : ''}
                           {tx.value ? ` | VALUE: ${tx.value}` : ''}
                         </div>
@@ -505,7 +505,7 @@ export default function TransactionMonitor() {
                             <button
                               onClick={() => handlePostToMarketplace(tx)}
                               disabled={processingTx === tx.id}
-                              className="w-full bg-mictlai-gold text-black font-pixel text-xs py-1.5 px-3 hover:bg-mictlai-gold/80 transition-colors flex items-center justify-center gap-2"
+                              className="w-full bg-base-blue text-light-card dark:text-dark-card font-pixel text-xs py-1.5 px-3 hover:bg-base-blue/80 transition-colors flex items-center justify-center gap-2"
                             >
                               {processingTx === tx.id ? (
                                 <>
@@ -525,7 +525,7 @@ export default function TransactionMonitor() {
                               href={getExplorerLink(tx)} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-mictlai-turquoise hover:text-mictlai-gold text-xs font-pixel hover:border-b hover:border-mictlai-gold"
+                              className="text-base-blue hover:text-base-blue-light text-xs font-pixel hover:border-b hover:border-base-blue"
                             >
                               VIEW ON {getExplorerName(tx)}
                             </a>
@@ -534,7 +534,7 @@ export default function TransactionMonitor() {
                       </div>
                     ))}
                     {completedTransactions.length > 5 && (
-                      <div className="text-center text-mictlai-bone/50 text-xs font-pixel">
+                      <div className="text-center text-light-secondary dark:text-dark-secondary text-xs font-pixel">
                         +{completedTransactions.length - 5} MORE TRANSACTIONS
                       </div>
                     )}

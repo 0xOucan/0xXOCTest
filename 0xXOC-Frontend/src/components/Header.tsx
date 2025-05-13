@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../providers/WalletContext';
+import { SunIcon, MoonIcon } from './Icons';
 
 // SVG Assets
 const skullIcon = (
@@ -29,33 +30,36 @@ const Header: React.FC<HeaderProps> = ({ toggleDarkMode, isDarkMode }) => {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between p-4 bg-mictlai-obsidian border-b border-mictlai-gold/30 backdrop-blur">
-        <div className="flex items-center space-x-2">
-        {skullIcon}
-        <h1 className="text-xl font-aztec font-bold text-mictlai-gold">MictlAI</h1>
-        </div>
+    <header className="sticky top-0 z-10 flex items-center justify-between p-4 border-b backdrop-blur transition-colors duration-200 dark:bg-dark-surface dark:border-dark-border bg-light-surface border-light-border">
+      <div className="flex items-center space-x-2">
+        <img 
+          src="/0xXOC-logo/logo 0xXOC.png" 
+          alt="0xXOC Logo" 
+          className="h-10 w-10" 
+        />
+        <h1 className="text-xl font-aztec font-bold text-base-blue dark:text-base-blue-light">0xXOC</h1>
+        <span className="px-2 py-0.5 bg-base-blue dark:bg-base-blue-dark text-white text-xs font-medium rounded">
+          MARKETPLACE
+        </span>
+      </div>
 
       <div className="flex items-center space-x-3">
-            <button 
+        <button 
           onClick={toggleDarkMode}
-          className="p-2 rounded-full text-mictlai-bone/70 hover:text-mictlai-bone"
+          className="p-2 rounded-full text-base-blue dark:text-base-blue-light hover:bg-light-surface dark:hover:bg-dark-surface transition-colors"
           aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           {isDarkMode ? (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-            </svg>
+            <SunIcon className="w-5 h-5" />
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-            </svg>
+            <MoonIcon className="w-5 h-5" />
           )}
         </button>
         
         {authenticated ? (
           <button 
             onClick={() => logout()}
-            className="flex items-center space-x-2 py-1.5 px-3 bg-black hover:bg-black/80 dark:bg-black/40 dark:hover:bg-black/70 text-mictlai-bone border border-mictlai-gold/30 rounded-md transition-colors"
+            className="flex items-center space-x-2 py-1.5 px-3 bg-dark-card dark:bg-dark-surface hover:bg-dark-card/80 dark:hover:bg-dark-surface/70 text-dark-text border border-base-blue/30 dark:border-base-blue-dark/30 rounded-md transition-colors"
           >
             <span className="text-sm font-medium">{formatAddress()}</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -65,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ toggleDarkMode, isDarkMode }) => {
         ) : (
           <button
             onClick={() => login()}
-            className="flex items-center space-x-2 py-1.5 px-3 bg-mictlai-blood hover:bg-mictlai-blood/80 text-mictlai-bone border border-mictlai-gold/30 rounded-md transition-colors"
+            className="flex items-center space-x-2 py-1.5 px-3 bg-base-blue hover:bg-base-blue-light text-white border border-base-blue-dark/30 rounded-md transition-colors"
           >
             <span className="text-sm font-medium">Connect Wallet</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">

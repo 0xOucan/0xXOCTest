@@ -128,17 +128,6 @@ export default function LiquidityMonitor() {
             isNative: true,
             icon: '💎',
             chain: 'base'
-          }))
-          .catch(() => ({
-            symbol: 'ETH',
-            address: 'native',
-            balance: '0',
-            balanceFormatted: '0.0000',
-            balanceUsd: '0.00',
-            decimals: 18,
-            isNative: true,
-            icon: '💎',
-            chain: 'base'
           })),
         
         // XOC Token
@@ -265,9 +254,9 @@ export default function LiquidityMonitor() {
   const groupedBalances = groupBalancesByChain();
   
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg overflow-hidden">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+        <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
           ESCROW LIQUIDITY
         </h2>
         <button 

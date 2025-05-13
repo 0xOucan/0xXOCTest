@@ -3,6 +3,7 @@ import { WalletIcon, LoadingIcon, CoinIcon } from './Icons';
 import { useWallet } from '../providers/WalletContext';
 import { createPublicClient, http, formatUnits } from 'viem';
 import { base } from 'viem/chains';
+import WalletConnect from './WalletConnect';
 
 // Token addresses
 const XOC_TOKEN_ADDRESS = "0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf"; // XOC on Base
@@ -60,6 +61,9 @@ export default function WalletBalances() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAllTokens, setShowAllTokens] = useState<boolean>(false);
+  const [expandedChains, setExpandedChains] = useState<{[key: string]: boolean}>({
+    base: true
+  });
   
   // Get native token balance
   const getNativeBalance = async (address: string) => {
@@ -219,112 +223,149 @@ export default function WalletBalances() {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
+  // Group balances by chain
+  const groupedBalances: { [key: string]: TokenBalance[] } = balances.reduce((acc, balance) => {
+    if (!acc[balance.chain]) {
+      acc[balance.chain] = [];
+    }
+    acc[balance.chain].push(balance);
+    return acc;
+  }, {} as { [key: string]: TokenBalance[] });
+
+  // Toggle chain expansion
+  const toggleChainExpansion = (chain: string) => {
+    setExpandedChains(prev => ({
+      ...prev,
+      [chain]: !prev[chain]
+    }));
+  };
+
+  // Get chain summary
+  const getChainSummary = (chainBalances: TokenBalance[]) => {
+    const totalUsd = chainBalances.reduce((sum, item) => sum + parseFloat(item.balanceUsd), 0).toFixed(2);
+    return { totalUsd };
+  };
+
+  // Get chain name
+  const getChainName = (chain: string): string => {
+    switch (chain) {
+      case 'base': return 'Base';
+      default: return chain.charAt(0).toUpperCase() + chain.slice(1);
+    }
+  };
+
   // Filter visible balances
   const visibleBalances = showAllTokens 
     ? balances 
     : balances.filter(b => parseFloat(b.balanceFormatted) > 0);
 
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-        <h2 className="text-lg font-bold flex items-center font-pixel text-mictlai-gold">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg overflow-hidden">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+        <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
           <CoinIcon className="w-5 h-5 mr-2" />
           WALLET BALANCES
         </h2>
         
         <button 
           onClick={fetchBalances}
-          disabled={isLoading || !isConnected}
-          className="text-mictlai-gold hover:text-mictlai-turquoise"
+          className="text-base-blue dark:text-base-blue-light hover:text-base-blue-light"
           title="Refresh balances"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
       </div>
       
       <div className="p-4">
-        {isLoading && balances.length === 0 ? (
+        {!isConnected ? (
+          <div className="text-center py-8">
+            <p className="text-light-secondary dark:text-dark-secondary mb-4">Connect your wallet to view balances</p>
+            <WalletConnect />
+          </div>
+        ) : isLoading ? (
           <div className="flex justify-center py-8">
-            <LoadingIcon className="h-8 w-8 text-mictlai-gold animate-spin" />
+            <LoadingIcon className="h-8 w-8 text-base-blue dark:text-base-blue-light animate-spin" />
           </div>
-        ) : error ? (
-          <div className="text-mictlai-blood text-center py-2 font-pixel border-2 border-mictlai-blood p-3">
-            {error}
-          </div>
-        ) : !isConnected ? (
-          <div className="text-mictlai-gold text-center py-4 font-pixel border-3 border-mictlai-gold/50 p-3">
-            CONNECT WALLET TO VIEW BALANCES
+        ) : balances.length === 0 ? (
+          <div className="text-center py-6 text-light-secondary dark:text-dark-secondary">
+            No token balances found
           </div>
         ) : (
-          <>
-            <div className="mb-4 px-3 py-2 bg-black border-2 border-mictlai-gold/50 text-center">
-              <div className="text-xs text-mictlai-bone/70 mb-1 font-pixel">CONNECTED WALLET</div>
-              <a 
-                href={connectedAddress ? `https://basescan.org/address/${connectedAddress}` : '#'}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-mictlai-turquoise font-pixel text-sm hover:text-mictlai-gold"
-                title={connectedAddress || ''}
-              >
-                {connectedAddress ? shortenAddress(connectedAddress) : ''}
-              </a>
-            </div>
-            
-            {visibleBalances.length === 0 ? (
-              <div className="text-mictlai-bone/50 text-center py-4 font-pixel text-sm border border-mictlai-bone/20 p-2">
-                NO TOKENS FOUND ON BASE NETWORK
-              </div>
-            ) : (
-              <div className="space-y-2 mb-4">
-                {visibleBalances.map((token) => (
-                  <div key={token.address} className="flex items-center justify-between p-3 hover:bg-black/20 border-2 border-mictlai-gold/30 bg-black/10">
-                    <div className="flex items-center">
-                      <span className="text-xl mr-3">{token.icon}</span>
-                      <div>
-                        <div className="font-bold text-mictlai-gold font-pixel">{token.symbol}</div>
-                        <div className="text-sm text-mictlai-bone/80 font-pixel">
-                          {
-                            // Format to 6 decimal places max
-                            parseFloat(token.balanceFormatted).toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 6
-                            })
-                          }
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-lg font-bold text-mictlai-turquoise font-pixel">${token.balanceUsd}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {balances.length > 0 && (
-              <>
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={() => setShowAllTokens(prev => !prev)}
-                    className="px-3 py-1 text-xs text-mictlai-gold hover:text-mictlai-turquoise font-pixel"
+          <div className="space-y-4">
+            {Object.entries(groupedBalances).map(([chain, chainBalances]) => {
+              const { totalUsd } = getChainSummary(chainBalances);
+              
+              return (
+                <div key={chain} className="border-2 border-base-blue/30 bg-light-card/20 dark:bg-dark-card/20">
+                  <div 
+                    className="flex justify-between items-center p-3 cursor-pointer hover:bg-light-card dark:hover:bg-dark-card"
+                    onClick={() => toggleChainExpansion(chain)}
                   >
-                    {showAllTokens ? 'HIDE EMPTY BALANCES' : 'SHOW ALL TOKENS'}
-                  </button>
-                </div>
-                
-                <div className="mt-6 p-3 bg-black/30 border-2 border-mictlai-gold/50 text-center">
-                  <div className="text-sm text-mictlai-bone/70 font-pixel">TOTAL VALUE</div>
-                  <div className="text-2xl font-bold text-mictlai-gold font-pixel">{totalValue}</div>
-                </div>
-                
-                {lastUpdated && (
-                  <div className="mt-2 text-xs text-center text-mictlai-bone/50 font-pixel">
-                    LAST UPDATED: {lastUpdated.toLocaleTimeString()}
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 flex items-center justify-center">
+                        {chain === 'base' && <span className="text-base">🔵</span>}
+                      </div>
+                      <span className="font-pixel text-light-text dark:text-dark-text">
+                        {getChainName(chain)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-base-blue dark:text-base-blue-light font-pixel">
+                        ${totalUsd} USD
+                      </span>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className={`h-5 w-5 transition-transform duration-200 ${expandedChains[chain] ? 'rotate-180' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </>
+                  
+                  {expandedChains[chain] && (
+                    <div className="border-t border-base-blue/20">
+                      <table className="w-full">
+                        <thead className="bg-light-card/30 dark:bg-dark-card/30">
+                          <tr className="text-left text-light-secondary dark:text-dark-secondary">
+                            <th className="p-2 text-xs font-pixel">TOKEN</th>
+                            <th className="p-2 text-xs font-pixel">BALANCE</th>
+                            <th className="p-2 text-xs font-pixel">VALUE (USD)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {chainBalances.map((balance, index) => (
+                            <tr 
+                              key={balance.symbol}
+                              className={`
+                                ${index % 2 === 0 ? 'bg-light-card/10 dark:bg-dark-card/10' : 'bg-light-card/20 dark:bg-dark-card/20'}
+                                hover:bg-base-blue/10
+                              `}
+                            >
+                              <td className="p-2 flex items-center gap-2">
+                                <span className="text-base">{balance.icon}</span>
+                                <span className="text-light-text dark:text-dark-text font-pixel">{balance.symbol}</span>
+                              </td>
+                              <td className="p-2 font-mono text-light-text dark:text-dark-text">
+                                {balance.balanceFormatted}
+                              </td>
+                              <td className="p-2 font-mono text-base-blue dark:text-base-blue-light">
+                                ${balance.balanceUsd}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

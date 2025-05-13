@@ -33,31 +33,31 @@ const exampleQrCodes = [
 const OxxoQrHelp = ({ onClose }: { onClose: () => void }) => {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg max-w-lg w-full p-4">
+      <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg max-w-lg w-full p-4">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-mictlai-gold font-pixel">OXXO SPIN QR CODE HELP</h3>
+          <h3 className="text-base-blue dark:text-base-blue-light font-pixel">OXXO SPIN QR CODE HELP</h3>
           <button 
             onClick={onClose}
-            className="text-mictlai-bone hover:text-mictlai-blood"
+            className="text-light-text dark:text-dark-text hover:text-red-500"
           >
             ✕
           </button>
         </div>
         
-        <div className="space-y-4 text-mictlai-bone">
+        <div className="space-y-4 text-light-text dark:text-dark-text">
           <p>
             This feature allows you to scan OXXO Spin QR codes directly from images.
             Upload an image containing an OXXO Spin QR code, and the system will automatically
             extract the payment information.
           </p>
           
-          <div className="bg-black/50 p-3 border border-mictlai-gold/30">
-            <h4 className="text-mictlai-turquoise font-pixel mb-2">TEST QR CODE</h4>
+          <div className="bg-light-card/50 dark:bg-dark-card/50 p-3 border border-base-blue/30">
+            <h4 className="text-base-blue dark:text-base-blue-light font-pixel mb-2">TEST QR CODE</h4>
             <div className="flex items-center gap-4">
               <a 
                 href="/test/test-oxxo-qr.png" 
                 target="_blank"
-                className="block border-2 border-mictlai-gold/50 hover:border-mictlai-gold transition-colors"
+                className="block border-2 border-base-blue/50 hover:border-base-blue transition-colors"
               >
                 <img src="/test/test-oxxo-qr.png" alt="Test OXXO Spin QR Code" className="w-32 h-32" />
               </a>
@@ -66,7 +66,7 @@ const OxxoQrHelp = ({ onClose }: { onClose: () => void }) => {
                 <a 
                   href="/test/test-oxxo-qr.png" 
                   download="test-oxxo-qr.png"
-                  className="mt-2 inline-block bg-mictlai-gold/20 hover:bg-mictlai-gold/30 text-mictlai-gold py-1 px-3 text-sm font-pixel"
+                  className="mt-2 inline-block bg-base-blue/20 hover:bg-base-blue/30 text-base-blue dark:text-base-blue-light py-1 px-3 text-sm font-pixel"
                 >
                   DOWNLOAD TEST QR
                 </a>
@@ -74,7 +74,7 @@ const OxxoQrHelp = ({ onClose }: { onClose: () => void }) => {
             </div>
           </div>
           
-          <p className="text-mictlai-bone/70 text-sm">
+          <p className="text-light-secondary dark:text-dark-secondary text-sm">
             Note: In a real scenario, you would take a screenshot of the OXXO Spin QR code from the OXXO app or website.
             The system will validate the QR code format to ensure it's a legitimate OXXO payment.
           </p>
@@ -82,7 +82,7 @@ const OxxoQrHelp = ({ onClose }: { onClose: () => void }) => {
         
         <button
           onClick={onClose}
-          className="w-full mt-4 py-2 bg-mictlai-gold text-black font-pixel hover:bg-mictlai-gold/80"
+          className="w-full mt-4 py-2 bg-base-blue text-white font-pixel hover:bg-base-blue-light"
         >
           CLOSE
         </button>
@@ -347,23 +347,23 @@ export default function CreateBuyingOrder() {
   };
   
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg overflow-hidden">
       {showHelp && <OxxoQrHelp onClose={() => setShowHelp(false)} />}
       
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+          <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
             BUY TOKENS WITH OXXO SPIN
           </h2>
           <button 
             onClick={() => setShowHelp(true)}
-            className="px-2 py-1 bg-mictlai-gold/20 text-mictlai-turquoise hover:bg-mictlai-gold/30 text-xs font-pixel border border-mictlai-turquoise/50"
+            className="px-2 py-1 bg-base-blue/20 text-base-blue hover:bg-base-blue/30 text-xs font-pixel border border-base-blue/50"
             title="Learn about QR scanning"
           >
             QR HELP
           </button>
         </div>
-        <p className="text-mictlai-bone/70 mt-2 text-sm">
+        <p className="text-light-secondary dark:text-dark-secondary mt-2 text-sm">
           Create a buying order using an OXXO Spin QR code to exchange Mexican Pesos for tokens
         </p>
       </div>
@@ -372,7 +372,7 @@ export default function CreateBuyingOrder() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Image Upload - Now the primary focus */}
           <div className="space-y-2">
-            <label className="block text-mictlai-bone font-pixel text-sm">
+            <label className="block text-light-text dark:text-dark-text font-pixel text-sm">
               UPLOAD OXXO SPIN QR CODE IMAGE
             </label>
             <div className="flex items-center">
@@ -386,7 +386,7 @@ export default function CreateBuyingOrder() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="py-2 px-3 bg-black border-2 border-mictlai-gold text-mictlai-gold hover:bg-mictlai-gold/20 font-pixel text-sm"
+                className="py-2 px-3 bg-light-card dark:bg-dark-card border-2 border-base-blue text-base-blue dark:text-base-blue-light hover:bg-base-blue/20 font-pixel text-sm"
               >
                 {isScanning ? 'SCANNING...' : 'SELECT QR CODE IMAGE'}
               </button>
@@ -394,13 +394,13 @@ export default function CreateBuyingOrder() {
                 <button
                   type="button"
                   onClick={clearSelectedImage}
-                  className="ml-2 py-2 px-3 bg-black border-2 border-mictlai-blood/50 text-mictlai-blood hover:border-mictlai-blood font-pixel text-sm"
+                  className="ml-2 py-2 px-3 bg-light-card dark:bg-dark-card border-2 border-red-500/50 text-red-500 hover:border-red-500 font-pixel text-sm"
                 >
                   CLEAR
                 </button>
               )}
               {selectedImage && (
-                <span className="ml-3 text-mictlai-bone/70 text-sm truncate max-w-xs">
+                <span className="ml-3 text-light-secondary dark:text-dark-secondary text-sm truncate max-w-xs">
                   {selectedImage.name} ({Math.round(selectedImage.size / 1024)} KB)
                 </span>
               )}
@@ -412,21 +412,21 @@ export default function CreateBuyingOrder() {
                   <img 
                     src={imagePreview} 
                     alt="Preview" 
-                    className="border-2 border-mictlai-gold/30 max-h-40 object-contain"
+                    className="border-2 border-base-blue/30 max-h-40 object-contain"
                   />
                 </div>
                 <div className="max-w-md">
                   {isScanning ? (
-                    <div className="flex items-center gap-2 text-mictlai-turquoise">
+                    <div className="flex items-center gap-2 text-base-blue">
                       <LoadingIcon className="w-4 h-4" />
                       <span>Scanning QR code...</span>
                     </div>
                   ) : scanError ? (
-                    <div className="text-mictlai-blood text-sm p-3 border border-mictlai-blood/30 bg-mictlai-blood/10">
+                    <div className="text-red-500 text-sm p-3 border border-red-500/30 bg-red-500/10">
                       {scanError}
                     </div>
                   ) : qrCodeData ? (
-                    <div className="text-mictlai-turquoise text-sm p-3 border border-mictlai-turquoise/30 bg-mictlai-turquoise/10">
+                    <div className="text-base-blue text-sm p-3 border border-base-blue/30 bg-base-blue/10">
                       ✓ QR code detected: OXXO Spin code for {getMxnAmountFromQrCode(qrCodeData)} MXN
                     </div>
                   ) : null}
@@ -434,19 +434,19 @@ export default function CreateBuyingOrder() {
               </div>
             )}
             
-            <div className="text-mictlai-bone/50 text-xs">
+            <div className="text-light-secondary dark:text-dark-secondary/50 text-xs">
               Upload a PNG or JPG/JPEG image containing an OXXO Spin QR code (max 5MB). The system will automatically extract the QR code data.
             </div>
           </div>
           
           {/* QR Code Data - Now secondary and auto-filled */}
           <div className="space-y-2">
-            <label className="block text-mictlai-bone font-pixel text-sm">
+            <label className="block text-light-text dark:text-dark-text font-pixel text-sm">
               OXXO SPIN QR CODE DATA
               <button
                 type="button"
                 onClick={() => setShowExamples(!showExamples)}
-                className="ml-2 text-mictlai-turquoise hover:text-mictlai-gold text-xs underline"
+                className="ml-2 text-base-blue hover:text-base-blue-light text-xs underline"
               >
                 {showExamples ? 'Hide Examples' : 'Show Examples'}
               </button>
@@ -454,36 +454,36 @@ export default function CreateBuyingOrder() {
             <textarea
               value={qrCodeData}
               onChange={(e) => setQrCodeData(e.target.value)}
-              className="w-full bg-black border-2 border-mictlai-bone/30 text-mictlai-bone p-2 font-mono text-sm focus:outline-none focus:border-mictlai-gold h-32"
+              className="w-full bg-light-card dark:bg-dark-card border-2 border-base-blue/30 text-base-blue p-2 font-mono text-sm focus:outline-none focus:border-base-blue h-32"
               placeholder='{"TipoOperacion":"0004","VersionQR":"01.01","FechaExpiracionQR":"25/12/31 23:59:59","FechaCreacionQR":"25/05/15 14:30:25","EmisorQR":"101","Monto":100,"Concepto":"","Operacion":{"Mensaje":"","CR":"1011499855001003","Comisiones":"12","CadenaEncriptada":"","Aux1":"","Aux2":""}}'
               required
             />
             
             {showExamples && (
-              <div className="border-2 border-mictlai-gold/30 p-3 bg-black/50 mt-2">
-                <h3 className="text-mictlai-gold font-pixel text-sm mb-2">EXAMPLE QR CODES</h3>
+              <div className="border-2 border-base-blue/30 p-3 bg-light-card dark:bg-dark-card/50 mt-2">
+                <h3 className="text-base-blue font-pixel text-sm mb-2">EXAMPLE QR CODES</h3>
                 <div className="space-y-2">
                   {exampleQrCodes.map((example, index) => (
-                    <div key={index} className="border border-mictlai-bone/20 p-2 bg-black flex justify-between items-center">
+                    <div key={index} className="border border-base-blue/20 p-2 bg-light-card dark:bg-dark-card flex justify-between items-center">
                       <div>
-                        <div className="text-mictlai-bone font-pixel text-xs">
+                        <div className="text-base-blue font-pixel text-xs">
                           {example.amount} MXN = {calculateTokenAmount(example.amount)} {token}
                         </div>
-                        <div className="text-mictlai-bone/50 text-xs mt-1 font-mono truncate w-64 overflow-hidden">
+                        <div className="text-base-blue/50 text-xs mt-1 font-mono truncate w-64 overflow-hidden">
                           {example.data.substring(0, 50)}...
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleCopyExample(example.data)}
-                        className="px-2 py-1 bg-mictlai-gold/20 text-mictlai-gold hover:bg-mictlai-gold/30 text-xs font-pixel"
+                        className="px-2 py-1 bg-base-blue/20 text-base-blue hover:bg-base-blue/30 text-xs font-pixel"
                       >
                         USE
                       </button>
                     </div>
                   ))}
                 </div>
-                <div className="text-mictlai-bone/50 text-xs mt-2">
+                <div className="text-base-blue/50 text-xs mt-2">
                   These are example QR codes for testing. In a real app, you would scan the QR code from the OXXO Spin app.
                 </div>
               </div>
@@ -492,7 +492,7 @@ export default function CreateBuyingOrder() {
           
           {/* Token Selection */}
           <div className="space-y-2">
-            <label className="block text-mictlai-bone font-pixel text-sm">
+            <label className="block text-light-text dark:text-dark-text font-pixel text-sm">
               TOKEN TO RECEIVE
             </label>
             <div className="flex gap-4">
@@ -503,9 +503,9 @@ export default function CreateBuyingOrder() {
                   value="XOC"
                   checked={token === 'XOC'}
                   onChange={() => setToken('XOC')}
-                  className="text-mictlai-gold"
+                  className="text-base-blue"
                 />
-                <span className="text-mictlai-bone">🍫 XOC</span>
+                <span className="text-light-secondary dark:text-dark-secondary">🍫 XOC</span>
               </label>
               
               <label className="flex items-center gap-2 cursor-pointer">
@@ -515,9 +515,9 @@ export default function CreateBuyingOrder() {
                   value="MXNe"
                   checked={token === 'MXNe'}
                   onChange={() => setToken('MXNe')}
-                  className="text-mictlai-gold"
+                  className="text-base-blue"
                 />
-                <span className="text-mictlai-bone">🪙 MXNe</span>
+                <span className="text-light-secondary dark:text-dark-secondary">🪙 MXNe</span>
               </label>
               
               <label className="flex items-center gap-2 cursor-pointer">
@@ -527,41 +527,41 @@ export default function CreateBuyingOrder() {
                   value="USDC"
                   checked={token === 'USDC'}
                   onChange={() => setToken('USDC')}
-                  className="text-mictlai-gold"
+                  className="text-base-blue"
                 />
-                <span className="text-mictlai-bone">💵 USDC</span>
+                <span className="text-light-secondary dark:text-dark-secondary">💵 USDC</span>
               </label>
             </div>
           </div>
           
           {/* Token Amount (calculated from QR code) */}
           <div className="space-y-2">
-            <label className="block text-mictlai-bone font-pixel text-sm">
+            <label className="block text-light-text dark:text-dark-text font-pixel text-sm">
               TOKEN AMOUNT (CALCULATED)
             </label>
             <input
               type="text"
               value={tokenAmount}
               onChange={(e) => setTokenAmount(e.target.value)}
-              className="w-full bg-black border-2 border-mictlai-bone/30 text-mictlai-bone p-2 font-pixel focus:outline-none focus:border-mictlai-gold"
+              className="w-full bg-light-card dark:bg-dark-card border-2 border-base-blue/30 text-base-blue p-2 font-pixel focus:outline-none focus:border-base-blue"
               placeholder="0.00"
               readOnly
             />
-            <div className="text-mictlai-bone/50 text-xs">
+            <div className="text-light-secondary dark:text-dark-secondary/50 text-xs">
               Exchange rate: 1 USDC = 20 MXN, 1 XOC = 1 MXN, 1 MXNe = 1 MXN
             </div>
           </div>
           
           {/* Memo (optional) */}
           <div className="space-y-2">
-            <label className="block text-mictlai-bone font-pixel text-sm">
+            <label className="block text-light-text dark:text-dark-text font-pixel text-sm">
               MEMO (OPTIONAL)
             </label>
             <input
               type="text"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
-              className="w-full bg-black border-2 border-mictlai-bone/30 text-mictlai-bone p-2 font-pixel focus:outline-none focus:border-mictlai-gold"
+              className="w-full bg-light-card dark:bg-dark-card border-2 border-base-blue/30 text-base-blue p-2 font-pixel focus:outline-none focus:border-base-blue"
               placeholder="Add a note to your buying order"
             />
           </div>
@@ -570,10 +570,10 @@ export default function CreateBuyingOrder() {
           <button
             type="submit"
             disabled={isLoading || !isConnected || !qrCodeData || !tokenAmount}
-            className={`w-full py-3 font-pixel text-black ${
+            className={`w-full py-3 font-pixel text-base-blue ${
               isLoading || !isConnected || !qrCodeData || !tokenAmount
-                ? 'bg-mictlai-gold/30 cursor-not-allowed'
-                : 'bg-mictlai-gold hover:bg-mictlai-gold/80'
+                ? 'bg-base-blue/30 cursor-not-allowed'
+                : 'bg-base-blue hover:bg-base-blue/80'
             } transition-colors flex items-center justify-center gap-2`}
           >
             {isLoading ? (
@@ -587,7 +587,7 @@ export default function CreateBuyingOrder() {
           </button>
           
           {!isConnected && (
-            <div className="text-center text-mictlai-blood font-pixel text-sm">
+            <div className="text-center text-red-500 font-pixel text-sm">
               Please connect your wallet to create a buying order
             </div>
           )}

@@ -439,12 +439,12 @@ export default function BuyingOrderDetail() {
   // Get status color class
   const getStatusColorClass = (status: string) => {
     switch (status) {
-      case 'active': return 'text-mictlai-turquoise';
-      case 'pending': return 'text-mictlai-gold';
+      case 'active': return 'text-base-blue';
+      case 'pending': return 'text-base-blue-light';
       case 'filled': return 'text-green-500';
-      case 'cancelled': return 'text-mictlai-blood';
-      case 'expired': return 'text-mictlai-bone/50';
-      default: return 'text-mictlai-bone';
+      case 'cancelled': return 'text-red-500';
+      case 'expired': return 'text-light-secondary dark:text-dark-secondary';
+      default: return 'text-light-text dark:text-dark-text';
     }
   };
   
@@ -626,21 +626,21 @@ export default function BuyingOrderDetail() {
   
   if (isLoading) {
     return (
-      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg p-8 flex justify-center items-center">
-        <LoadingIcon className="w-10 h-10 text-mictlai-gold" />
+      <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg p-8 flex justify-center items-center">
+        <LoadingIcon className="w-10 h-10 text-base-blue" />
       </div>
     );
   }
   
   if (!order) {
     return (
-      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg p-8">
+      <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg p-8">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-mictlai-gold mb-4">ORDER NOT FOUND</h2>
-          <p className="text-mictlai-bone mb-6">The buying order you're looking for does not exist or has been deleted.</p>
+          <h2 className="text-xl font-bold text-base-blue dark:text-base-blue-light mb-4">ORDER NOT FOUND</h2>
+          <p className="text-light-text dark:text-dark-text mb-6">The buying order you're looking for does not exist or has been deleted.</p>
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-4 py-2 bg-mictlai-gold text-black font-pixel hover:bg-mictlai-gold/80"
+            className="px-4 py-2 bg-base-blue text-white font-pixel hover:bg-base-blue-light"
           >
             BACK TO MARKETPLACE
           </button>
@@ -650,15 +650,15 @@ export default function BuyingOrderDetail() {
   }
   
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg">
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold shadow-pixel-lg flex justify-between items-center">
-        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+        <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
           BUYING ORDER DETAILS
         </h2>
         
         <button 
           onClick={() => navigate('/marketplace')}
-          className="px-3 py-1 border-2 border-mictlai-gold/70 hover:bg-mictlai-gold/20 text-mictlai-gold transition-colors shadow-pixel text-sm"
+          className="px-3 py-1 border-2 border-base-blue/70 hover:bg-base-blue/20 text-base-blue dark:text-base-blue-light transition-colors shadow-pixel text-sm"
           title="Back to marketplace"
         >
           BACK
@@ -667,14 +667,14 @@ export default function BuyingOrderDetail() {
       
       <div className="p-6">
         {/* Order ID and Status */}
-        <div className="flex justify-between items-center mb-6 border-b-2 border-mictlai-gold/30 pb-4">
+        <div className="flex justify-between items-center mb-6 border-b-2 border-base-blue/30 pb-4">
           <div>
-            <h3 className="text-xl font-pixel text-mictlai-gold">ORDER #{order.orderId}</h3>
+            <h3 className="text-xl font-pixel text-base-blue dark:text-base-blue-light">ORDER #{order.orderId}</h3>
             <div className="flex items-center gap-2 mt-2">
               <span className={`text-sm font-pixel ${getStatusColorClass(order.status)}`}>
                 {formatStatus(order.status)}
               </span>
-              <span className="text-mictlai-bone/50 text-sm">
+              <span className="text-light-text dark:text-dark-text text-sm">
                 {formatTimeAgo(order.createdAt)}
               </span>
             </div>
@@ -685,7 +685,7 @@ export default function BuyingOrderDetail() {
             <button
               onClick={handleCancelOrder}
               disabled={isCancelling}
-              className="border-2 border-mictlai-blood text-mictlai-blood text-sm font-pixel py-1 px-3 hover:bg-mictlai-blood/20 transition-colors"
+              className="border-2 border-red-500 text-red-500 text-sm font-pixel py-1 px-3 hover:bg-red-500/20 transition-colors"
             >
               {isCancelling ? 'CANCELLING...' : 'CANCEL ORDER'}
             </button>
@@ -694,40 +694,40 @@ export default function BuyingOrderDetail() {
         
         {/* Order Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div className="bg-black/30 p-4 border-2 border-mictlai-gold/30">
-            <h4 className="text-mictlai-bone/70 font-pixel text-sm mb-3">TOKEN DETAILS</h4>
+          <div className="bg-light-card/30 dark:bg-dark-card/30 p-4 border-2 border-base-blue/30">
+            <h4 className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-3">TOKEN DETAILS</h4>
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">{getTokenEmoji(order.token)}</span>
               <div>
-                <div className="text-mictlai-gold font-pixel">{order.token}</div>
-                <div className="text-xl text-mictlai-bone">{order.tokenAmount}</div>
+                <div className="text-base-blue dark:text-base-blue-light font-pixel">{order.token}</div>
+                <div className="text-xl text-light-text dark:text-dark-text">{order.tokenAmount}</div>
               </div>
             </div>
-            <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
+            <div className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-1">
               MXN Amount (OXXO Spin)
             </div>
-            <div className="text-mictlai-gold font-pixel font-bold text-xl">
+            <div className="text-base-blue dark:text-base-blue-light font-pixel font-bold text-xl">
               💰 {order.mxnAmount.toFixed(2)}
             </div>
             
-            <div className="mt-4 border-t border-mictlai-bone/20 pt-4">
-              <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
+            <div className="mt-4 border-t border-light-border dark:border-dark-border pt-4">
+              <div className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-1">
                 OXXO Reference Code
               </div>
-              <div className="text-mictlai-bone font-mono">
+              <div className="text-light-text dark:text-dark-text font-mono">
                 {order.referenceCode}
               </div>
-              <div className="text-mictlai-bone/70 text-xs mt-1">
+              <div className="text-light-secondary dark:text-dark-secondary text-xs mt-1">
                 QR Expiration: {order.qrExpiration}
               </div>
             </div>
             
             {order.memo && (
-              <div className="mt-4 border-t border-mictlai-bone/20 pt-4">
-                <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
+              <div className="mt-4 border-t border-light-border dark:border-dark-border pt-4">
+                <div className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-1">
                   Memo
                 </div>
-                <div className="text-mictlai-bone">
+                <div className="text-light-text dark:text-dark-text">
                   {order.memo}
                 </div>
               </div>
@@ -735,44 +735,44 @@ export default function BuyingOrderDetail() {
           </div>
           
           {/* Buyer Details */}
-          <div className="bg-black/30 p-4 border-2 border-mictlai-gold/30">
-            <h4 className="text-mictlai-bone/70 font-pixel text-sm mb-3">BUYER DETAILS</h4>
-            <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
+          <div className="bg-light-card/30 dark:bg-dark-card/30 p-4 border-2 border-base-blue/30">
+            <h4 className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-3">BUYER DETAILS</h4>
+            <div className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-1">
               Buyer Address
             </div>
-            <div className="text-mictlai-bone break-all font-mono mb-6">
+            <div className="text-light-text dark:text-dark-text break-all font-mono mb-6">
               {order.buyer}
             </div>
             
             {order.txHash && (
               <>
-                <div className="text-mictlai-bone/70 font-pixel text-sm mb-1">
+                <div className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-1">
                   Transaction ID
                 </div>
-                <div className="text-mictlai-turquoise break-all font-mono mb-2">
+                <div className="text-base-blue dark:text-base-blue-light break-all font-mono mb-2">
                   {order.txHash}
                 </div>
                 
                 {/* Show blockchain transaction hash and BaseScan link if available */}
                 {order.onChainTxHash ? (
                   <>
-                    <div className="text-mictlai-bone/70 font-pixel text-sm mb-1 mt-4">
+                    <div className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-1 mt-4">
                       Blockchain Transaction Hash
                     </div>
-                    <div className="text-mictlai-turquoise break-all font-mono mb-2">
+                    <div className="text-base-blue dark:text-base-blue-light break-all font-mono mb-2">
                       {order.onChainTxHash}
                     </div>
                     <a 
                       href={`https://basescan.org/tx/${order.onChainTxHash}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-block text-sm text-mictlai-gold hover:underline"
+                      className="inline-block text-sm text-base-blue dark:text-base-blue-light hover:underline"
                     >
                       VIEW ON BASESCAN →
                     </a>
                   </>
                 ) : (
-                  <div className="text-mictlai-bone/50 text-sm">
+                  <div className="text-light-secondary dark:text-dark-secondary text-sm">
                     Waiting for blockchain confirmation...
                   </div>
                 )}
@@ -782,12 +782,12 @@ export default function BuyingOrderDetail() {
         </div>
         
         {/* QR Code Decryption Section */}
-        <div className="mt-8 p-4 border-t-2 border-mictlai-gold/30">
-          <h3 className="text-mictlai-gold font-pixel text-lg mb-4">DECRYPT QR CODE DATA</h3>
+        <div className="mt-8 p-4 border-t-2 border-base-blue/30">
+          <h3 className="text-base-blue dark:text-base-blue-light font-pixel text-lg mb-4">DECRYPT QR CODE DATA</h3>
           
           {!isDecrypted ? (
             <div>
-              <p className="text-mictlai-bone/70 mb-4">
+              <p className="text-light-secondary dark:text-dark-secondary mb-4">
                 Enter your Private Access UUID to decrypt the QR code data. Keep in mind that your Private Access UUID was shown to you when you created the order.
               </p>
               
@@ -807,22 +807,22 @@ export default function BuyingOrderDetail() {
                     type="text"
                     value={privateUuid}
                     onChange={(e) => setPrivateUuid(e.target.value)}
-                    className="flex-1 bg-black border-2 border-mictlai-bone/30 text-mictlai-bone p-2 font-pixel focus:outline-none focus:border-mictlai-gold"
+                    className="flex-1 bg-light-card dark:bg-dark-card border-2 border-light-border dark:border-dark-border text-light-text dark:text-dark-text p-2 font-pixel focus:outline-none focus:border-base-blue"
                     placeholder="Enter your Private Access UUID"
                   />
                 </div>
                 
                 {/* Decryption Method Selection */}
-                <div className="mb-4 border-2 border-mictlai-bone/20 p-3 bg-black/50">
-                  <h5 className="text-mictlai-bone/70 font-pixel text-sm mb-2">SELECT DECRYPTION METHOD:</h5>
+                <div className="mb-4 border-2 border-light-border dark:border-dark-border p-3 bg-light-card/50 dark:bg-dark-card/50">
+                  <h5 className="text-light-secondary dark:text-dark-secondary font-pixel text-sm mb-2">SELECT DECRYPTION METHOD:</h5>
                   
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={(e) => { e.preventDefault(); setDecryptionMethod('auto'); }}
                       className={`px-3 py-2 border-2 font-pixel text-sm ${
                         decryptionMethod === 'auto'
-                          ? 'border-mictlai-turquoise bg-mictlai-turquoise/20 text-mictlai-turquoise'
-                          : 'border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-turquoise/50'
+                          ? 'border-base-blue bg-base-blue/20 text-base-blue dark:text-base-blue-light'
+                          : 'border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:border-base-blue/50'
                       }`}
                     >
                       {decryptionMethod === 'auto' ? '✓ ' : ''}AUTO (TRY BOTH)
@@ -832,8 +832,8 @@ export default function BuyingOrderDetail() {
                       onClick={(e) => { e.preventDefault(); setDecryptionMethod('local'); }}
                       className={`px-3 py-2 border-2 font-pixel text-sm ${
                         decryptionMethod === 'local'
-                          ? 'border-mictlai-turquoise bg-mictlai-turquoise/20 text-mictlai-turquoise'
-                          : 'border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-turquoise/50'
+                          ? 'border-base-blue bg-base-blue/20 text-base-blue dark:text-base-blue-light'
+                          : 'border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:border-base-blue/50'
                       }`}
                       disabled={!order.encryptedQrData}
                       title={!order.encryptedQrData ? 'No local data available' : 'Use locally stored encrypted data'}
@@ -845,19 +845,19 @@ export default function BuyingOrderDetail() {
                       onClick={(e) => { e.preventDefault(); setDecryptionMethod('blockchain'); }}
                       className={`px-3 py-2 border-2 font-pixel text-sm ${
                         decryptionMethod === 'blockchain'
-                          ? 'border-mictlai-turquoise bg-mictlai-turquoise/20 text-mictlai-turquoise'
-                          : 'border-mictlai-bone/30 text-mictlai-bone hover:border-mictlai-turquoise/50'
+                          ? 'border-base-blue bg-base-blue/20 text-base-blue dark:text-base-blue-light'
+                          : 'border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:border-base-blue/50'
                       }`}
                       disabled={!order.onChainTxHash}
                       title={!order.onChainTxHash ? 'No blockchain transaction hash available' : 'Decrypt directly from blockchain data'}
                     >
                       {decryptionMethod === 'blockchain' ? '✓ ' : ''}BLOCKCHAIN
-                      {!order.onChainTxHash && <span className="text-mictlai-blood ml-1">(unavailable)</span>}
+                      {!order.onChainTxHash && <span className="text-red-500 ml-1">(unavailable)</span>}
                     </button>
                   </div>
                   
                   {/* Details about selected method */}
-                  <div className="mt-2 text-xs text-mictlai-bone/60">
+                  <div className="mt-2 text-xs text-light-secondary dark:text-dark-secondary">
                     {decryptionMethod === 'auto' && 'Will try local storage first, then blockchain if needed.'}
                     {decryptionMethod === 'local' && 'Uses cached encrypted data for faster decryption.'}
                     {decryptionMethod === 'blockchain' && 'Retrieves and decrypts data directly from the blockchain transaction.'}
@@ -867,10 +867,10 @@ export default function BuyingOrderDetail() {
                 <button
                   type="submit"
                   disabled={isDecrypting || !privateUuid}
-                  className={`px-4 py-2 font-pixel text-black ${
+                  className={`px-4 py-2 font-pixel text-white ${
                     isDecrypting || !privateUuid
-                      ? 'bg-mictlai-gold/30 cursor-not-allowed'
-                      : 'bg-mictlai-gold hover:bg-mictlai-gold/80'
+                      ? 'bg-base-blue/30 cursor-not-allowed'
+                      : 'bg-base-blue hover:bg-base-blue/80'
                   } transition-colors flex items-center justify-center gap-2 w-full`}
                 >
                   {isDecrypting ? (
@@ -887,7 +887,7 @@ export default function BuyingOrderDetail() {
           ) : (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-mictlai-gold font-pixel text-sm">DECRYPTED QR CODE DATA</h4>
+                <h4 className="text-base-blue font-pixel text-sm">DECRYPTED QR CODE DATA</h4>
                 <button
                   type="button"
                   onClick={() => {
@@ -895,27 +895,27 @@ export default function BuyingOrderDetail() {
                     setDecryptedData(null);
                     setImageDownloaded(false);
                   }}
-                  className="text-mictlai-gold text-xs hover:underline"
+                  className="text-base-blue text-xs hover:underline"
                 >
                   Decrypt another
                 </button>
               </div>
               
-              <div className="bg-black/30 p-4 border-2 border-mictlai-gold/30 font-mono text-mictlai-bone/80 text-sm mb-4 max-h-80 overflow-y-auto">
+              <div className="bg-light-card dark:bg-dark-card p-4 border-2 border-base-blue/30 font-mono text-light-text dark:text-dark-text/80 text-sm mb-4 max-h-80 overflow-y-auto">
                 <pre>{decryptedData ? JSON.stringify(decryptedData, null, 2) : decryptedQRData}</pre>
               </div>
               
               <div className="mt-3 mb-4">
-                <p className="text-mictlai-bone/50 text-xs">
+                <p className="text-light-text dark:text-dark-text/50 text-xs">
                   Public UUID: {order.publicUuid}
                 </p>
                 {order.onChainTxHash && (
-                  <p className="text-mictlai-bone/50 text-xs">
+                  <p className="text-light-text dark:text-dark-text/50 text-xs">
                     Transaction Hash: <a 
                       href={`https://basescan.org/tx/${order.onChainTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-mictlai-turquoise/50 hover:text-mictlai-turquoise"
+                      className="text-base-blue/50 hover:text-base-blue"
                     >
                       {order.onChainTxHash.substring(0, 10)}...{order.onChainTxHash.substring(order.onChainTxHash.length - 8)}
                     </a>
@@ -931,25 +931,25 @@ export default function BuyingOrderDetail() {
               </div>
               
               {/* Display the decryption result (QR data) */}
-              <div className="bg-black/30 mt-6 p-4 border-2 border-mictlai-gold/50">
-                <h3 className="text-mictlai-turquoise font-pixel text-lg mb-4">DECRYPTED QR CODE DATA</h3>
-                <div className="text-mictlai-bone bg-black p-3 font-mono text-sm border border-mictlai-gold/30 whitespace-pre-wrap max-h-60 overflow-y-auto">
+              <div className="bg-light-card dark:bg-dark-card mt-6 p-4 border-2 border-base-blue/50">
+                <h3 className="text-base-blue font-pixel text-lg mb-4">DECRYPTED QR CODE DATA</h3>
+                <div className="text-light-text bg-light-card dark:bg-dark-card p-3 font-mono text-sm border border-base-blue/30 whitespace-pre-wrap max-h-60 overflow-y-auto">
                   {decryptedData ? JSON.stringify(decryptedData, null, 2) : decryptedQRData}
                 </div>
                 
                 {/* Image download section */}
                 {hasImage && (
-                  <div className="mt-6 border-t-2 border-mictlai-gold/30 pt-4">
-                    <h3 className="text-mictlai-turquoise font-pixel text-lg mb-4">QR CODE IMAGE</h3>
+                  <div className="mt-6 border-t-2 border-base-blue/30 pt-4">
+                    <h3 className="text-base-blue font-pixel text-lg mb-4">QR CODE IMAGE</h3>
                     
-                    <div className="bg-black/50 p-4 border border-mictlai-turquoise/50">
+                    <div className="bg-light-card dark:bg-dark-card p-4 border border-base-blue/50">
                       <div className="flex items-center gap-3">
-                        <div className="text-mictlai-gold text-3xl">🖼️</div>
+                        <div className="text-base-blue text-3xl">🖼️</div>
                         <div>
-                          <p className="text-mictlai-bone mb-2">The QR code image is available for download.</p>
+                          <p className="text-light-text dark:text-dark-text mb-2">The QR code image is available for download.</p>
                           
                           {imageDownloaded ? (
-                            <div className="flex items-center gap-2 text-mictlai-turquoise">
+                            <div className="flex items-center gap-2 text-base-blue">
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
@@ -960,7 +960,7 @@ export default function BuyingOrderDetail() {
                               <button
                                 onClick={handleImageDownload}
                                 disabled={isLoading}
-                                className={`px-4 py-2 ${isLoading ? 'bg-mictlai-gold/30 cursor-wait' : 'bg-mictlai-gold hover:bg-mictlai-gold/80'} text-black font-pixel flex items-center gap-2`}
+                                className={`px-4 py-2 ${isLoading ? 'bg-base-blue/30 cursor-wait' : 'bg-base-blue hover:bg-base-blue/80'} text-base-blue font-pixel flex items-center gap-2`}
                               >
                                 {isLoading ? (
                                   <>
@@ -978,7 +978,7 @@ export default function BuyingOrderDetail() {
                               </button>
                             
                               {downloadTimeRemaining > 0 && (
-                                <div className="mt-2 text-sm text-mictlai-bone/70">
+                                <div className="mt-2 text-light-text dark:text-dark-text/70">
                                   Time remaining: {downloadTimeRemaining} seconds
                                 </div>
                               )}
@@ -1003,9 +1003,9 @@ export default function BuyingOrderDetail() {
               disabled={isCancelling}
               className={`px-6 py-3 border ${
                 isCancelling
-                  ? 'bg-mictlai-bone/20 cursor-wait border-mictlai-bone/30'
-                  : 'bg-mictlai-bone/10 hover:bg-mictlai-bone/30 border-mictlai-bone/50'
-              } font-pixel text-mictlai-bone flex items-center justify-center`}
+                  ? 'bg-base-blue/20 cursor-wait border-base-blue/30'
+                  : 'bg-base-blue/10 hover:bg-base-blue/30 border-base-blue/50'
+              } font-pixel text-base-blue flex items-center justify-center`}
             >
               {isCancelling ? (
                 <>
@@ -1023,7 +1023,7 @@ export default function BuyingOrderDetail() {
             <button
               onClick={handleFillOrder}
               disabled={isFilling}
-              className="mt-4 w-full border-3 border-mictlai-turquoise py-2 font-pixel text-mictlai-turquoise hover:bg-mictlai-turquoise/20 focus:bg-mictlai-turquoise/30 shadow-pixel disabled:border-mictlai-bone/30 disabled:text-mictlai-bone/30 disabled:hover:bg-transparent transition-all"
+              className="mt-4 w-full border-3 border-base-blue py-2 font-pixel text-base-blue hover:bg-base-blue/20 focus:bg-base-blue/30 shadow-pixel disabled:border-base-blue/30 disabled:text-base-blue/30 disabled:hover:bg-transparent transition-all"
             >
               {isFilling ? (
                 <div className="flex items-center justify-center">
@@ -1039,7 +1039,7 @@ export default function BuyingOrderDetail() {
           {/* Back button */}
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-6 py-3 bg-transparent border border-mictlai-bone/30 hover:bg-mictlai-bone/10 font-pixel text-mictlai-bone"
+            className="px-6 py-3 bg-transparent border border-base-blue/30 hover:bg-base-blue/10 font-pixel text-base-blue"
           >
             BACK TO MARKETPLACE
           </button>
@@ -1047,11 +1047,11 @@ export default function BuyingOrderDetail() {
         
         {/* Filler section - Show if user has filled this order */}
         {order?.status === 'filled' && isFilledByCurrentUser && (
-          <div className="mt-8 border-t-2 border-mictlai-gold/30 pt-6">
-            <h3 className="text-mictlai-turquoise font-pixel text-xl mb-4">FILLED ORDER ACTIONS</h3>
+          <div className="mt-8 border-t-2 border-base-blue/30 pt-6">
+            <h3 className="text-base-blue font-pixel text-xl mb-4">FILLED ORDER ACTIONS</h3>
             
-            <div className="bg-black/30 p-4 border border-mictlai-gold/50">
-              <p className="text-mictlai-bone mb-4">
+            <div className="bg-light-card dark:bg-dark-card p-4 border border-base-blue/50">
+              <p className="text-light-text dark:text-dark-text mb-4">
                 You've successfully filled this order. You can now download the OXXO Spin QR code to collect your payment.
               </p>
               
@@ -1059,11 +1059,11 @@ export default function BuyingOrderDetail() {
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={handleFillerQRDownload}
-                    className="px-4 py-2 bg-mictlai-gold hover:bg-mictlai-gold/80 text-black font-pixel flex items-center justify-center"
+                    className="px-4 py-2 bg-base-blue hover:bg-base-blue/80 text-base-blue font-pixel flex items-center justify-center"
                   >
                     DOWNLOAD QR CODE
                   </button>
-                  <p className="text-sm text-mictlai-bone/60">
+                  <p className="text-sm text-light-text dark:text-dark-text/60">
                     This download link will expire in 5 minutes for security reasons.
                   </p>
                 </div>
@@ -1073,9 +1073,9 @@ export default function BuyingOrderDetail() {
                   disabled={isLoading}
                   className={`px-4 py-2 ${
                     isLoading
-                      ? 'bg-mictlai-gold/30 cursor-wait'
-                      : 'bg-mictlai-gold hover:bg-mictlai-gold/80'
-                  } text-black font-pixel flex items-center justify-center`}
+                      ? 'bg-base-blue/30 cursor-wait'
+                      : 'bg-base-blue hover:bg-base-blue/80'
+                  } text-base-blue font-pixel flex items-center justify-center`}
                 >
                   {isLoading ? (
                     <>
@@ -1093,10 +1093,10 @@ export default function BuyingOrderDetail() {
         
         {/* Token Transfer Section - Show if order is filled and QR code has been downloaded */}
         {order?.status === 'filled' && order?.qrCodeDownloaded && (
-          <div className="mt-8 border-t-2 border-mictlai-gold/30 pt-6">
-            <h3 className="text-mictlai-turquoise font-pixel text-xl mb-4">TOKEN TRANSFER STATUS</h3>
+          <div className="mt-8 border-t-2 border-base-blue/30 pt-6">
+            <h3 className="text-base-blue font-pixel text-xl mb-4">TOKEN TRANSFER STATUS</h3>
             
-            <div className="bg-black/30 p-4 border border-mictlai-gold/50">
+            <div className="bg-light-card dark:bg-dark-card p-4 border border-base-blue/50">
               {order.transferTxHash ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-green-500">
@@ -1106,12 +1106,12 @@ export default function BuyingOrderDetail() {
                     <p className="font-pixel">Tokens have been transferred from escrow to buyer!</p>
                   </div>
                   
-                  <div className="text-mictlai-bone/70 text-sm mt-2">
+                  <div className="text-light-text dark:text-dark-text/70 text-sm mt-2">
                     <p>Transaction Hash: <a 
                       href={`https://basescan.org/tx/${order.transferTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-mictlai-turquoise hover:underline break-all"
+                      className="text-base-blue hover:underline break-all"
                     >
                       {order.transferTxHash}
                     </a></p>
@@ -1132,14 +1132,14 @@ export default function BuyingOrderDetail() {
                 </div>
               ) : order.transferError ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-mictlai-blood">
+                  <div className="flex items-center gap-3 text-red-500">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p className="font-pixel">There was an error transferring tokens from escrow to buyer</p>
                   </div>
                   
-                  <div className="mt-4 p-3 border border-mictlai-blood/30 bg-mictlai-blood/10 text-mictlai-blood/80">
+                  <div className="mt-4 p-3 border border-red-500/30 bg-red-900/20 text-red-500">
                     <p>Error: {order.transferError}</p>
                     <p className="mt-2 text-sm">Please try again or contact support for assistance.</p>
                   </div>
@@ -1147,7 +1147,7 @@ export default function BuyingOrderDetail() {
                   <button
                     onClick={handleManualTokenTransfer}
                     disabled={isLoading}
-                    className="mt-2 px-4 py-2 bg-mictlai-gold text-black hover:bg-mictlai-gold/80 font-pixel flex items-center justify-center gap-2"
+                    className="mt-2 px-4 py-2 bg-base-blue text-base-blue hover:bg-base-blue/80 font-pixel flex items-center justify-center gap-2"
                   >
                     {isLoading ? (
                       <>
@@ -1161,12 +1161,12 @@ export default function BuyingOrderDetail() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-mictlai-gold">
+                  <div className="flex items-center gap-3 text-base-blue">
                     <LoadingIcon className="w-5 h-5" />
                     <p className="font-pixel">Waiting for token transfer from escrow to buyer</p>
                   </div>
                   
-                  <div className="mt-4 p-3 border border-mictlai-gold/30 bg-mictlai-gold/10 text-mictlai-gold/80">
+                  <div className="mt-4 p-3 border border-base-blue/30 bg-base-blue/10 text-base-blue/80">
                     <p>The token transfer should be processed shortly. Please check back in a few moments.</p>
                     {isOwner ? (
                       <p className="mt-2">You will receive {order.tokenAmount} {order.token} to your wallet: {formatAddress(order.buyer, 6, 4)}</p>
@@ -1178,7 +1178,7 @@ export default function BuyingOrderDetail() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={fetchOrderDetails}
-                      className="px-4 py-2 bg-mictlai-gold/20 text-mictlai-gold hover:bg-mictlai-gold/30 font-pixel text-sm"
+                      className="px-4 py-2 bg-base-blue/20 text-base-blue hover:bg-base-blue/30 font-pixel text-sm"
                     >
                       REFRESH STATUS
                     </button>
@@ -1186,7 +1186,7 @@ export default function BuyingOrderDetail() {
                     <button
                       onClick={handleManualTokenTransfer}
                       disabled={isLoading}
-                      className="px-4 py-2 bg-mictlai-gold text-black hover:bg-mictlai-gold/80 font-pixel text-sm flex items-center justify-center gap-2"
+                      className="px-4 py-2 bg-base-blue text-base-blue hover:bg-base-blue/80 font-pixel text-sm flex items-center justify-center gap-2"
                     >
                       {isLoading ? (
                         <>

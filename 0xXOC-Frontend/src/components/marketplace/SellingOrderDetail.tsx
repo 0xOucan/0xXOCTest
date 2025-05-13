@@ -279,12 +279,12 @@ export default function SellingOrderDetail() {
   // Get status color class
   const getStatusColorClass = (status: string) => {
     switch (status) {
-      case 'active': return 'text-mictlai-turquoise';
-      case 'pending': return 'text-mictlai-gold';
+      case 'active': return 'text-base-blue';
+      case 'pending': return 'text-base-blue-light';
       case 'filled': return 'text-green-500';
-      case 'cancelled': return 'text-mictlai-blood';
-      case 'expired': return 'text-mictlai-bone/50';
-      default: return 'text-mictlai-bone';
+      case 'cancelled': return 'text-red-500';
+      case 'expired': return 'text-light-secondary dark:text-dark-secondary';
+      default: return 'text-light-text dark:text-dark-text';
     }
   };
   
@@ -347,12 +347,12 @@ export default function SellingOrderDetail() {
   const QrCodeUploadModal = () => {
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-        <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg max-w-lg w-full p-4">
+        <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg max-w-lg w-full p-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-mictlai-gold font-pixel">FILL SELLING ORDER</h3>
+            <h3 className="text-base-blue dark:text-base-blue-light font-pixel">FILL SELLING ORDER</h3>
             <button 
               onClick={() => setShowQrUploadModal(false)}
-              className="text-mictlai-bone hover:text-mictlai-blood"
+              className="text-light-text dark:text-dark-text hover:text-red-500"
             >
               ✕
             </button>
@@ -479,21 +479,21 @@ export default function SellingOrderDetail() {
   
   if (loading) {
     return (
-      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg p-8 flex justify-center items-center">
-        <LoadingIcon className="w-10 h-10 text-mictlai-gold" />
+      <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg p-8 flex justify-center items-center">
+        <LoadingIcon className="w-10 h-10 text-base-blue dark:text-base-blue-light" />
       </div>
     );
   }
   
   if (!order) {
     return (
-      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg p-8">
+      <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg p-8">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-mictlai-gold mb-4">ORDER NOT FOUND</h2>
-          <p className="text-mictlai-bone mb-6">The selling order you're looking for does not exist or has been deleted.</p>
+          <h2 className="text-xl font-bold text-base-blue dark:text-base-blue-light mb-4">ORDER NOT FOUND</h2>
+          <p className="text-light-text dark:text-dark-text mb-6">The selling order you're looking for does not exist or has been deleted.</p>
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-4 py-2 bg-mictlai-gold text-black font-pixel hover:bg-mictlai-gold/80"
+            className="px-4 py-2 bg-base-blue text-white font-pixel hover:bg-base-blue-light"
           >
             BACK TO MARKETPLACE
           </button>
@@ -503,17 +503,17 @@ export default function SellingOrderDetail() {
   }
   
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg">
+    <div className="bg-light-surface dark:bg-dark-surface border-3 border-base-blue shadow-pixel-lg">
       {showQrUploadModal && <QrCodeUploadModal />}
       
-      <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
+      <div className="p-4 bg-light-card dark:bg-dark-card border-b-3 border-base-blue/70 flex justify-between items-center">
+        <h2 className="text-lg font-bold font-pixel text-base-blue dark:text-base-blue-light">
           SELLING ORDER DETAILS
         </h2>
         
         <button 
           onClick={() => navigate('/marketplace')}
-          className="px-3 py-1 border-2 border-mictlai-gold/70 hover:bg-mictlai-gold/20 text-mictlai-gold transition-colors shadow-pixel text-sm"
+          className="px-3 py-1 border-2 border-base-blue/70 hover:bg-base-blue/20 text-base-blue dark:text-base-blue-light transition-colors shadow-pixel text-sm"
           title="Back to marketplace"
         >
           BACK
@@ -522,14 +522,14 @@ export default function SellingOrderDetail() {
       
       <div className="p-6">
         {/* Order ID and Status */}
-        <div className="flex justify-between items-center mb-6 border-b-2 border-mictlai-gold/30 pb-4">
+        <div className="flex justify-between items-center mb-6 border-b-2 border-base-blue/30 pb-4">
           <div>
-            <h3 className="text-xl font-pixel text-mictlai-gold">ORDER #{order.orderId}</h3>
+            <h3 className="text-xl font-pixel text-base-blue dark:text-base-blue-light">ORDER #{order.orderId}</h3>
             <div className="flex items-center gap-2 mt-2">
               <span className={`text-sm font-pixel ${getStatusColorClass(order.status)}`}>
                 {formatStatus(order.status)}
               </span>
-              <span className="text-mictlai-bone/50 text-sm">
+              <span className="text-light-secondary dark:text-dark-secondary text-sm">
                 {formatTimeAgo(order.createdAt)}
               </span>
             </div>
@@ -542,7 +542,7 @@ export default function SellingOrderDetail() {
               <button
                 onClick={handleCancelOrder}
                 disabled={isCancelling}
-                className="border-2 border-mictlai-blood text-mictlai-blood text-sm font-pixel py-1 px-3 hover:bg-mictlai-blood/20 transition-colors"
+                className="border-2 border-red-500 text-red-500 text-sm font-pixel py-1 px-3 hover:bg-red-500/20 transition-colors"
               >
                 {isCancelling ? 'CANCELLING...' : 'CANCEL ORDER'}
               </button>
@@ -552,7 +552,7 @@ export default function SellingOrderDetail() {
             {order.status === 'active' && isConnected && order.seller.toLowerCase() !== connectedAddress?.toLowerCase() && (
               <button
                 onClick={() => setShowQrUploadModal(true)}
-                className="border-2 border-mictlai-turquoise text-mictlai-turquoise text-sm font-pixel py-1 px-3 hover:bg-mictlai-turquoise/20 transition-colors"
+                className="border-2 border-base-blue text-base-blue dark:text-base-blue-light text-sm font-pixel py-1 px-3 hover:bg-base-blue/20 transition-colors"
               >
                 FILL ORDER
               </button>

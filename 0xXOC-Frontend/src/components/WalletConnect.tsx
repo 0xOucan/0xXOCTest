@@ -1,104 +1,84 @@
 import React from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../providers/WalletContext';
 import { LoadingIcon } from './Icons';
 
-// Main header component for wallet connection
+// Format wallet address
+const formatAddress = (address: string) => {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
 export default function WalletConnect() {
-  const { 
-    connectedAddress, 
-    isConnected, 
-    isConnecting, 
-    isBackendSynced, 
-    connect, 
-    wallets 
-  } = useWallet();
+  const { login, authenticated, user, ready } = usePrivy();
+  const { isConnected, connectedAddress } = useWallet();
   
-  // Format address for display
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
-
-  // Wait for wallet to be ready
-  if (isConnecting) return (
-    <button className="bg-mictlai-obsidian border-3 border-mictlai-gold/50 px-3 py-1.5 shadow-pixel flex items-center text-mictlai-bone">
-      <LoadingIcon className="animate-spin h-4 w-4 mr-2" />
-      <span className="text-sm font-pixel">CONNECTING...</span>
-    </button>
-  );
-
-  // If not connected, show connect button
-  if (!isConnected) {
+  if (!ready) {
     return (
-      <button 
-        onClick={connect} 
-        className="pixel-btn text-sm font-pixel"
-      >
-        CONNECT WALLET
+      <button className="flex items-center justify-center space-x-2 px-4 py-2 bg-light-card dark:bg-dark-card border border-base-blue/30 rounded-md shadow-sm">
+        <LoadingIcon className="w-4 h-4 text-base-blue dark:text-base-blue-light" />
+        <span className="text-light-secondary dark:text-dark-secondary">Loading...</span>
       </button>
     );
   }
-
-  // If connected, show compact status
+  
+  if (authenticated && isConnected) {
+    return (
+      <button 
+        className="flex items-center justify-center space-x-2 px-4 py-2 bg-light-card dark:bg-dark-card border border-base-blue/30 text-base-blue dark:text-base-blue-light rounded-md shadow-sm hover:bg-base-blue/10 transition-colors"
+        onClick={() => {}}
+      >
+        <span className="font-pixel text-sm">{formatAddress(connectedAddress || '')}</span>
+        <span className="inline-flex w-2 h-2 bg-green-500 rounded-full"></span>
+      </button>
+    );
+  }
+  
   return (
-    <div className="flex items-center">
-      <div className="bg-mictlai-obsidian border-3 border-mictlai-gold/70 px-3 py-1.5 shadow-pixel flex items-center">
-        <span className={`h-2 w-2 ${isBackendSynced ? 'bg-mictlai-turquoise' : 'bg-mictlai-blood'} mr-2 pixel-pulse`}></span>
-        <span className="text-sm text-mictlai-bone font-pixel">{formatAddress(connectedAddress || '')}</span>
-      </div>
-    </div>
+    <button 
+      className="flex items-center justify-center space-x-2 px-4 py-2 bg-base-blue text-white rounded-md shadow-sm hover:bg-base-blue-light transition-colors"
+      onClick={() => login()}
+    >
+      <span className="font-pixel text-sm">CONNECT WALLET</span>
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    </button>
   );
 }
 
-// Wallet status bar component
 export function WalletStatusBar() {
-  const { 
-    connectedAddress, 
-    isConnected, 
-    isBackendSynced,
-    wallets 
-  } = useWallet();
+  const { isConnected, connectedAddress, isBackendSynced } = useWallet();
   
   if (!isConnected) return null;
   
   return (
-    <div className="w-full bg-black border-t-3 border-b-3 border-mictlai-gold/30 px-4 py-1.5 flex justify-between items-center text-sm font-pixel">
-      {/* Left side - status */}
-      <div className="flex items-center">
-        <span className="text-mictlai-turquoise mr-1">✓</span>
-        <span className="text-mictlai-bone mr-3">WALLET CONNECTED</span>
+    <div className="bg-light-surface dark:bg-dark-surface border-t border-light-border dark:border-dark-border px-4 py-1 text-xs text-light-secondary dark:text-dark-secondary flex items-center justify-end">
+      <div className="flex items-center space-x-3">
+        <div className="flex items-center">
+          <span className="inline-block w-2 h-2 bg-base-blue rounded-full mr-1"></span>
+          <span className="text-base-blue dark:text-base-blue-light">Connected</span>
+        </div>
         
         {isBackendSynced && (
-          <>
-            <span className="text-mictlai-turquoise mr-1">✓</span>
-            <span className="text-mictlai-bone">SYNCED WITH BACKEND</span>
-          </>
+          <div className="flex items-center">
+            <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+            <span>Synced</span>
+          </div>
         )}
-      </div>
-      
-      {/* Right side - wallet info */}
-      {wallets.length > 0 && (
-        <div className="flex items-center">
-          <span className="text-mictlai-gold/70 mr-2">
-            {formatAddress(connectedAddress || wallets[0].address)}
-          </span>
-          <span className="bg-mictlai-obsidian border border-mictlai-blood px-1.5 py-0.5 text-xs text-mictlai-bone shadow-pixel-inner mr-2">
-            WALLET
-          </span>
+        
+        <div className="flex items-center space-x-1">
+          <span className="font-mono">{formatAddress(connectedAddress || '')}</span>
           <a 
-            href={`https://debank.com/profile/${connectedAddress || wallets[0].address}`}
-            target="_blank"
+            href={`https://basescan.org/address/${connectedAddress}`}
+            target="_blank" 
             rel="noopener noreferrer"
-            className="text-mictlai-turquoise hover:text-mictlai-gold border border-mictlai-turquoise/50 px-2 hover:border-mictlai-gold/50"
+            className="text-base-blue dark:text-base-blue-light hover:underline"
           >
-            VIEW
+            View
           </a>
         </div>
-      )}
+      </div>
     </div>
   );
-  
-  // Helper function to format address
-  function formatAddress(address: string) {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  }
 } 
