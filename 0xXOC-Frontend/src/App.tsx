@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import ChatInterface from './components/ChatInterface';
 import WalletBalances from './components/WalletBalances';
 import LiquidityMonitor from './components/LiquidityMonitor';
 import InfoPanel from './components/InfoPanel';
@@ -13,8 +12,7 @@ import { NotificationProvider } from './utils/notification';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(true);
-  const [isAgentActive, setIsAgentActive] = useState(false);
-  const [activeSection, setActiveSection] = useState<'chat' | 'marketplace'>('chat');
+  const [isAppActive, setIsAppActive] = useState(false);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -73,45 +71,11 @@ export default function App() {
                   </svg>
                   <div className="absolute top-0 left-0 w-full h-full bg-mictlai-turquoise opacity-10 animate-pulse"></div>
                 </div>
-                <h1 className="text-xl font-pixel font-bold tracking-widest text-mictlai-gold">MICTLAI</h1>
+                <h1 className="text-xl font-pixel font-bold tracking-widest text-mictlai-gold">0xXOC</h1>
                 <span className="ml-3 bg-mictlai-blood border border-mictlai-gold text-xs font-pixel px-2 py-1 shadow-pixel">
-                  AI BRIDGE
+                  MARKETPLACE
                 </span>
               </div>
-                
-                {/* Navigation - Center */}
-                {isAgentActive && (
-                  <nav className="hidden md:flex items-center space-x-4">
-                    <button
-                      onClick={() => {
-                        setActiveSection('chat');
-                        // Navigate to chat
-                        window.location.href = '/';
-                      }}
-                      className={`px-3 py-1 font-pixel text-sm ${
-                        activeSection === 'chat' 
-                          ? 'border-b-2 border-mictlai-gold text-mictlai-gold'
-                          : 'text-mictlai-bone/70 hover:text-mictlai-bone'
-                      }`}
-                    >
-                      AI ASSISTANT
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveSection('marketplace');
-                        // Navigate to marketplace
-                        window.location.href = '/marketplace';
-                      }}
-                      className={`px-3 py-1 font-pixel text-sm ${
-                        activeSection === 'marketplace' 
-                          ? 'border-b-2 border-mictlai-gold text-mictlai-gold'
-                          : 'text-mictlai-bone/70 hover:text-mictlai-bone'
-                      }`}
-                    >
-                      MARKETPLACE
-                    </button>
-                  </nav>
-                )}
               
               {/* Controls Section - Right */}
               <div className="flex items-center space-x-4">
@@ -138,59 +102,35 @@ export default function App() {
           
           {/* Wallet status bar - Pixel Style */}
           <WalletStatusBar />
-            
-            {/* Mobile menu (only for activated agent) */}
-            {isAgentActive && (
-              <div className="md:hidden flex border-b-3 border-mictlai-gold/30">
-                <button
-                  onClick={() => {
-                    setActiveSection('chat');
-                    // Navigate to chat
-                    window.location.href = '/';
-                  }}
-                  className={`flex-1 py-2 font-pixel text-sm ${
-                    activeSection === 'chat' 
-                      ? 'bg-mictlai-gold/20 text-mictlai-gold border-b-3 border-mictlai-gold'
-                      : 'text-mictlai-bone/70 hover:bg-black/30'
-                  }`}
-                >
-                  AI ASSISTANT
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveSection('marketplace');
-                    // Navigate to marketplace
-                    window.location.href = '/marketplace';
-                  }}
-                  className={`flex-1 py-2 font-pixel text-sm ${
-                    activeSection === 'marketplace' 
-                      ? 'bg-mictlai-gold/20 text-mictlai-gold border-b-3 border-mictlai-gold'
-                      : 'text-mictlai-bone/70 hover:bg-black/30'
-                  }`}
-                >
-                  MARKETPLACE
-                </button>
-              </div>
-            )}
           
           {/* Main content */}
           <main className="container mx-auto px-4 py-6">
-            {!isAgentActive ? (
-              <InfoPanel onActivateAgent={() => setIsAgentActive(true)} />
+            {!isAppActive ? (
+              <InfoPanel onActivateAgent={() => setIsAppActive(true)} />
             ) : (
                 <Routes>
                   <Route path="/" element={
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <ChatInterface />
-                </div>
-                <div className="lg:col-span-1 space-y-6">
-                  <WalletBalances />
-                  <LiquidityMonitor />
-                </div>
-              </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2">
+                        <MarketplacePage />
+                      </div>
+                      <div className="lg:col-span-1 space-y-6">
+                        <WalletBalances />
+                        <LiquidityMonitor />
+                      </div>
+                    </div>
                   } />
-                  <Route path="/marketplace/*" element={<MarketplacePage />} />
+                  <Route path="/marketplace/*" element={
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2">
+                        <MarketplacePage />
+                      </div>
+                      <div className="lg:col-span-1 space-y-6">
+                        <WalletBalances />
+                        <LiquidityMonitor />
+                      </div>
+                    </div>
+                  } />
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             )}
@@ -200,7 +140,7 @@ export default function App() {
           <TransactionMonitor />
           
           <footer className="bg-black py-3 text-center text-mictlai-gold/70 text-sm border-t-3 border-mictlai-gold/20">
-            <p className="container mx-auto font-pixel">⛧ MICTLAI - BRIDGING WORLDS BEYOND TIME ⛧</p>
+            <p className="container mx-auto font-pixel">⛧ 0xXOC - P2P TOKEN MARKETPLACE ⛧</p>
           </footer>
         </div>
           </NotificationProvider>

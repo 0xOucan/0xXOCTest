@@ -12,7 +12,8 @@ import {
   switchToChain,
   executeTransaction,
   getTransactionDetails,
-  updateTransactionHash
+  updateTransactionHash,
+  switchToBaseChain
 } from '../services/transactionService';
 import { useNotification, NotificationType } from '../utils/notification';
 import { LoadingIcon } from './Icons';
@@ -56,42 +57,12 @@ export default function TransactionMonitor() {
   // Get blockchain explorer link for a transaction
   const getExplorerLink = (tx: PendingTransaction): string => {
     if (!tx.hash) return '#';
-    
-    // Determine which explorer to use based on chain
-    const chain = tx.metadata?.chain || 'celo';
-    
-    switch(chain) {
-      case 'base':
-        return `https://basescan.org/tx/${tx.hash}`;
-      case 'arbitrum':
-        return `https://arbiscan.io/tx/${tx.hash}`;
-      case 'mantle':
-        return `https://explorer.mantle.xyz/tx/${tx.hash}`;
-      case 'zksync':
-        return `https://explorer.zksync.io/tx/${tx.hash}`;
-      case 'celo':
-      default:
-        return `https://celoscan.io/tx/${tx.hash}`;
-    }
+    return `https://basescan.org/tx/${tx.hash}`;
   };
 
   // Get explorer name based on chain
   const getExplorerName = (tx: PendingTransaction): string => {
-    const chain = tx.metadata?.chain || 'celo';
-    
-    switch(chain) {
-      case 'base':
-        return 'Basescan';
-      case 'arbitrum':
-        return 'Arbiscan';
-      case 'mantle':
-        return 'Mantle Explorer';
-      case 'zksync':
-        return 'zkSync Explorer';
-      case 'celo':
-      default:
-        return 'Celoscan';
-    }
+    return 'Basescan';
   };
 
   // Switch to the correct network based on the transaction's chain
@@ -103,24 +74,16 @@ export default function TransactionMonitor() {
       const wallet = getPrimaryWallet();
       if (!wallet) return;
       
-      // Determine which chain to use
-      let targetChain: 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync' = 'celo'; // Default to Celo
-      
-      if (transaction?.metadata?.chain) {
-        // Use the chain from transaction metadata if available
-        targetChain = transaction.metadata.chain as 'celo' | 'base' | 'arbitrum' | 'mantle' | 'zksync';
-      }
-      
       try {
         const provider = await wallet.getEthereumProvider();
         if (provider) {
-          await switchToChain(provider, targetChain);
-          console.log(`Network verified for ${targetChain.toUpperCase()} transactions`);
+          await switchToBaseChain(provider);
+          console.log('Network verified for BASE chain transactions');
         } else {
           console.warn('Could not get provider to switch networks');
         }
       } catch (error) {
-        console.error(`Error switching to ${targetChain} network:`, error);
+        console.error('Error switching to Base network:', error);
         const errMsg = error instanceof Error ? error.message : 'Unknown error switching networks';
         setNetworkError(`Network Error: ${errMsg}`);
       }
@@ -444,7 +407,10 @@ export default function TransactionMonitor() {
                         </div>
                         <div className="flex justify-between items-center mt-1 text-xs font-pixel">
                           <span className="text-mictlai-bone/60">
-                            {tx.metadata?.chain ? `CHAIN: ${tx.metadata.chain.toUpperCase()}` : ''}
+                            {/* Metadata info */}
+                            {tx.metadata?.dataType ? `TYPE: ${tx.metadata.dataType.toUpperCase()}` : ''}
+                            {tx.metadata?.orderId ? ` | ORDER ID: ${tx.metadata.orderId.substring(0, 6)}...` : ''}
+                            CHAIN: BASE
                           </span>
                           {tx.hash && (
                             <a 

@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { CoinIcon, LoadingIcon } from './Icons';
 import { createPublicClient, http, formatUnits } from 'viem';
-import { base, arbitrum, mantle, zkSync } from 'viem/chains';
+import { base } from 'viem/chains';
 
 // Token addresses
 const XOC_TOKEN_ADDRESS = "0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf"; // XOC on Base
-const MXNB_TOKEN_ADDRESS = "0xF197FFC28c23E0309B5559e7a166f2c6164C80aA"; // MXNB on Arbitrum
-const USDT_MANTLE_TOKEN_ADDRESS = "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE"; // USDT on Mantle
-const USDT_ZKSYNC_ERA_TOKEN_ADDRESS = "0x493257fD37EDB34451f62EDf8D2a0C418852bA4C"; // USDT on zkSync Era
+const MXNE_TOKEN_ADDRESS = "0x269caE7Dc59803e5C596c95756faEeBb6030E0aF"; // MXNe on Base
+const USDC_TOKEN_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // USDC on Base
 
 // Token decimals for formatting
 const XOC_DECIMALS = 18;
-const MXNB_DECIMALS = 6;
-const USDT_MANTLE_DECIMALS = 6;
-const USDT_ZKSYNC_ERA_DECIMALS = 6;
+const MXNE_DECIMALS = 6;
+const USDC_DECIMALS = 6;
 
 // Standard ERC20 ABI for balance queries
 const ERC20_ABI = [
@@ -23,30 +21,40 @@ const ERC20_ABI = [
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
-  }
-] as const;
+  },
+  {
+    inputs: [],
+    name: "decimals",
+    outputs: [{ name: "", type: "uint8" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "symbol",
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+];
 
-// Chain clients
-const chainClients = {
-  base: createPublicClient({
-    chain: base,
-    transport: http(base.rpcUrls.default.http[0]),
-  }),
-  arbitrum: createPublicClient({
-    chain: arbitrum,
-    transport: http(arbitrum.rpcUrls.default.http[0]),
-  }),
-  mantle: createPublicClient({
-    chain: mantle,
-    transport: http(mantle.rpcUrls.default.http[0]),
-  }),
-  zksync: createPublicClient({
-    chain: zkSync,
-    transport: http(zkSync.rpcUrls.default.http[0]),
-  }),
+// Create Viem clients
+const baseClient = createPublicClient({
+  chain: base,
+  transport: http(),
+});
+
+// Escrow wallet addresses
+const BASE_ESCROW_ADDRESS = "0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45";
+
+// Token price estimates for USD value calculation
+const TOKEN_PRICES = {
+  XOC: 0.05,     // $0.05 per XOC
+  MXNE: 0.055,   // $0.055 per MXNe
+  USDC: 1.0,     // $1.00 per USDC
+  ETH: 2500      // $2500 per ETH (example value, should be updated dynamically)
 };
 
-// Define interface for token balance
 interface TokenBalance {
   symbol: string;
   address: string;
@@ -60,318 +68,302 @@ interface TokenBalance {
 }
 
 export default function LiquidityMonitor() {
-  // Use a hardcoded address if environment variable is not available
-  const ESCROW_WALLET_ADDRESS = import.meta.env.VITE_ESCROW_WALLET_ADDRESS || "0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45";
-  
   const [balances, setBalances] = useState<TokenBalance[]>([]);
-  const [totalValue, setTotalValue] = useState<string>('$0.00');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // Track expanded chain sections
+  const [isLoading, setIsLoading] = useState(true);
   const [expandedChains, setExpandedChains] = useState<Record<string, boolean>>({
-    base: true,
-    arbitrum: true,
-    mantle: true,
-    zksync: true
+    base: true
   });
   
-  // Get ERC20 token balance for a chain
+  // Get token balance
   const getTokenBalance = async (
-    chain: 'base' | 'arbitrum' | 'mantle' | 'zksync',
+    chain: 'base',
     tokenAddress: string,
     walletAddress: string
   ) => {
     try {
-      const client = chainClients[chain];
+      const client = baseClient;
       const balance = await client.readContract({
         address: tokenAddress as `0x${string}`,
         abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: [walletAddress as `0x${string}`],
+        functionName: 'balanceOf',
+        args: [walletAddress],
       });
+      
       return balance as bigint;
     } catch (error) {
-      console.error(`Error getting token balance on ${chain}:`, error);
+      console.error(`Error fetching token balance for ${tokenAddress}:`, error);
       return BigInt(0);
     }
   };
-
-  // Format amount with proper decimals
+  
+  // Format token amount
   const formatAmount = (amount: bigint, decimals: number): string => {
-    return formatUnits(amount, decimals);
+    return parseFloat(formatUnits(amount, decimals)).toFixed(4);
   };
   
-  // Convert token value to USD
+  // Calculate USD value
   const getUsdValue = (amount: string, symbol: string): string => {
-    const numAmount = parseFloat(amount);
-    
-    // Apply conversion rates based on token
-    if (symbol === 'XOC' || symbol === 'MXNB') {
-      // 1 XOC or MXNB = 1 MXN = 0.05 USD (20 tokens = 1 USD)
-      return (numAmount / 20).toFixed(2);
-    } else if (symbol === 'USDT') {
-      // 1 USDT = 1 USD
-      return numAmount.toFixed(2);
-    }
-    
-    return '0.00';
+    const value = parseFloat(amount) * (TOKEN_PRICES[symbol as keyof typeof TOKEN_PRICES] || 0);
+    return value.toFixed(2);
   };
-
+  
+  // Fetch token balances
   const fetchBalances = async () => {    
     setIsLoading(true);
-    setError(null);
     
     try {
-      const results: TokenBalance[] = [];
-      let totalUsdValue = 0;
+      const balancePromises: Promise<TokenBalance>[] = [];
       
-      // Define tokens to check (excluding ETH)
-      const tokensToCheck = [
-        // Base tokens
-        {
-          chain: 'base' as const,
-          symbol: 'XOC',
-          address: XOC_TOKEN_ADDRESS,
-          decimals: XOC_DECIMALS,
-          isNative: false,
-          icon: '🇲🇽'
-        },
-        // Arbitrum tokens
-        {
-          chain: 'arbitrum' as const,
-          symbol: 'MXNB',
-          address: MXNB_TOKEN_ADDRESS,
-          decimals: MXNB_DECIMALS,
-          isNative: false,
-          icon: '🇲🇽'
-        },
-        // Mantle tokens
-        {
-          chain: 'mantle' as const,
-          symbol: 'USDT',
-          address: USDT_MANTLE_TOKEN_ADDRESS,
-          decimals: USDT_MANTLE_DECIMALS,
-          isNative: false,
-          icon: '💲'
-        },
-        // zkSync tokens
-        {
-          chain: 'zksync' as const,
-          symbol: 'USDT',
-          address: USDT_ZKSYNC_ERA_TOKEN_ADDRESS,
-          decimals: USDT_ZKSYNC_ERA_DECIMALS,
-          isNative: false,
-          icon: '💲'
-        }
+      // Base chain balances
+      const basePromises = [
+        // Native ETH
+        baseClient.getBalance({ address: BASE_ESCROW_ADDRESS as `0x${string}` })
+          .then(balance => ({
+            symbol: 'ETH',
+            address: 'native',
+            balance: balance.toString(),
+            balanceFormatted: formatAmount(balance, 18),
+            balanceUsd: getUsdValue(formatAmount(balance, 18), 'ETH'),
+            decimals: 18,
+            isNative: true,
+            icon: '💎',
+            chain: 'base'
+          }))
+          .catch(() => ({
+            symbol: 'ETH',
+            address: 'native',
+            balance: '0',
+            balanceFormatted: '0.0000',
+            balanceUsd: '0.00',
+            decimals: 18,
+            isNative: true,
+            icon: '💎',
+            chain: 'base'
+          })),
+        
+        // XOC Token
+        getTokenBalance('base', XOC_TOKEN_ADDRESS, BASE_ESCROW_ADDRESS)
+          .then(balance => ({
+            symbol: 'XOC',
+            address: XOC_TOKEN_ADDRESS,
+            balance: balance.toString(),
+            balanceFormatted: formatAmount(balance, XOC_DECIMALS),
+            balanceUsd: getUsdValue(formatAmount(balance, XOC_DECIMALS), 'XOC'),
+            decimals: XOC_DECIMALS,
+            isNative: false,
+            icon: '🍫',
+            chain: 'base'
+          })),
+        
+        // MXNe Token
+        getTokenBalance('base', MXNE_TOKEN_ADDRESS, BASE_ESCROW_ADDRESS)
+          .then(balance => ({
+            symbol: 'MXNe',
+            address: MXNE_TOKEN_ADDRESS,
+            balance: balance.toString(),
+            balanceFormatted: formatAmount(balance, MXNE_DECIMALS),
+            balanceUsd: getUsdValue(formatAmount(balance, MXNE_DECIMALS), 'MXNE'),
+            decimals: MXNE_DECIMALS,
+            isNative: false,
+            icon: '🪙',
+            chain: 'base'
+          })),
+        
+        // USDC Token
+        getTokenBalance('base', USDC_TOKEN_ADDRESS, BASE_ESCROW_ADDRESS)
+          .then(balance => ({
+            symbol: 'USDC',
+            address: USDC_TOKEN_ADDRESS,
+            balance: balance.toString(),
+            balanceFormatted: formatAmount(balance, USDC_DECIMALS),
+            balanceUsd: getUsdValue(formatAmount(balance, USDC_DECIMALS), 'USDC'),
+            decimals: USDC_DECIMALS,
+            isNative: false,
+            icon: '💵',
+            chain: 'base'
+          })),
       ];
       
-      // Fetch balances for all tokens
-      for (const token of tokensToCheck) {
-        const balance = await getTokenBalance(token.chain, token.address, ESCROW_WALLET_ADDRESS);
-        
-        const formattedBalance = formatAmount(balance, token.decimals);
-        const usdValue = getUsdValue(formattedBalance, token.symbol);
-        
-        results.push({
-          symbol: token.symbol,
-          address: token.address,
-          balance: balance.toString(),
-          balanceFormatted: formattedBalance,
-          balanceUsd: `$${usdValue}`,
-          decimals: token.decimals,
-          isNative: token.isNative,
-          icon: token.icon,
-          chain: token.chain
-        });
-        
-        totalUsdValue += parseFloat(usdValue);
-      }
+      balancePromises.push(...basePromises);
       
-      // Sort by USD value, highest first
-      results.sort((a, b) => {
-        const aValue = parseFloat(a.balanceUsd.replace('$', ''));
-        const bValue = parseFloat(b.balanceUsd.replace('$', ''));
-        return bValue - aValue;
-      });
+      // Resolve all promises
+      const results = await Promise.all(balancePromises);
       
-      setBalances(results);
-      setTotalValue(`$${totalUsdValue.toFixed(2)}`);
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error fetching balances:', err);
-      setError('Failed to fetch escrow wallet balances. Please try again.');
-    } finally {
+      // Filter out any failed queries
+      const validBalances = results.filter(b => b !== null);
+      
+      setBalances(validBalances);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching balances:', error);
       setIsLoading(false);
     }
   };
-
-  // Fetch balances on component mount
+  
+  // Fetch balances on component mount and every 30 seconds
   useEffect(() => {
     fetchBalances();
-    // Set up automatic refresh every 5 minutes
-    const intervalId = setInterval(fetchBalances, 5 * 60 * 1000);
+    
+    const intervalId = setInterval(() => {
+      fetchBalances();
+    }, 30000);
+    
     return () => clearInterval(intervalId);
   }, []);
-
-  // Function to shorten wallet address for display
+  
+  // Format address for display
   const shortenAddress = (address: string): string => {
-    if (!address) return '';
+    if (!address || address === 'native') return 'Native';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
-
-  // Get chain name for display
+  
+  // Get chain name
   const getChainName = (chain: string): string => {
     switch (chain) {
-      case 'base': return 'BASE';
-      case 'arbitrum': return 'ARBITRUM';
-      case 'mantle': return 'MANTLE';
-      case 'zksync': return 'ZKSYNC ERA';
-      default: return chain.toUpperCase();
+      case 'base':
+        return 'BASE';
+      default:
+        return chain.toUpperCase();
     }
   };
-
+  
   // Group balances by chain
   const groupBalancesByChain = () => {
     const grouped: Record<string, TokenBalance[]> = {};
     
-    for (const balance of balances) {
+    balances.forEach(balance => {
       if (!grouped[balance.chain]) {
         grouped[balance.chain] = [];
       }
       grouped[balance.chain].push(balance);
-    }
+    });
     
     return grouped;
   };
   
-  // Toggle expansion of a chain section
+  // Toggle chain expansion
   const toggleChainExpansion = (chain: string) => {
     setExpandedChains(prev => ({
       ...prev,
       [chain]: !prev[chain]
     }));
   };
-
+  
+  // Calculate chain totals
+  const getChainSummary = (chainBalances: TokenBalance[]) => {
+    let totalUsd = 0;
+    
+    chainBalances.forEach(balance => {
+      totalUsd += parseFloat(balance.balanceUsd);
+    });
+    
+    return {
+      totalUsd: totalUsd.toFixed(2)
+    };
+  };
+  
+  const groupedBalances = groupBalancesByChain();
+  
   return (
-    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg pixel-panel">
+    <div className="bg-mictlai-obsidian border-3 border-mictlai-gold shadow-pixel-lg overflow-hidden">
       <div className="p-4 bg-black border-b-3 border-mictlai-gold/70 flex justify-between items-center">
-        <h2 className="text-lg font-bold flex items-center font-pixel text-mictlai-gold">
-          <CoinIcon className="w-5 h-5 mr-2" />
+        <h2 className="text-lg font-bold font-pixel text-mictlai-gold">
           ESCROW LIQUIDITY
         </h2>
-        
         <button 
           onClick={fetchBalances}
-          disabled={isLoading}
-          className="p-1.5 border-2 border-mictlai-gold/70 hover:bg-mictlai-blood transition-colors shadow-pixel disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-mictlai-gold hover:text-mictlai-turquoise"
           title="Refresh balances"
         >
-          {isLoading ? (
-            <LoadingIcon className="w-4 h-4 text-mictlai-gold" />
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4 h-4 text-mictlai-gold">
-              <rect x="7" y="1" width="2" height="2" fill="currentColor" />
-              <rect x="9" y="3" width="2" height="2" fill="currentColor" />
-              <rect x="11" y="5" width="2" height="2" fill="currentColor" />
-              <rect x="13" y="7" width="2" height="2" fill="currentColor" />
-              <rect x="3" y="7" width="2" height="2" fill="currentColor" />
-              <rect x="5" y="9" width="2" height="2" fill="currentColor" />
-              <rect x="7" y="11" width="2" height="2" fill="currentColor" />
-              <rect x="9" y="13" width="2" height="2" fill="currentColor" />
-              <rect x="11" y="11" width="2" height="2" fill="currentColor" />
-              <rect x="13" y="9" width="2" height="2" fill="currentColor" />
-              <rect x="1" y="9" width="2" height="2" fill="currentColor" />
-              <rect x="3" y="11" width="2" height="2" fill="currentColor" />
-            </svg>
-          )}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
         </button>
       </div>
       
       <div className="p-4">
-        {isLoading && balances.length === 0 ? (
-          <div className="py-4 flex flex-col items-center justify-center">
-            <LoadingIcon className="w-6 h-6 text-mictlai-gold mb-2" />
-            <p className="text-mictlai-bone font-pixel text-sm">FETCHING ESCROW BALANCES...</p>
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <LoadingIcon className="h-8 w-8 text-mictlai-gold animate-spin" />
           </div>
-        ) : error ? (
-          <div className="text-mictlai-blood text-center py-2 font-pixel border-2 border-mictlai-blood p-3">
-            {error}
+        ) : balances.length === 0 ? (
+          <div className="text-center py-6 text-mictlai-bone/70">
+            No liquidity data available
           </div>
         ) : (
-          <>
-            <div className="mb-4 px-3 py-2 bg-black border-3 border-mictlai-gold/50 text-center shadow-pixel-inner">
-              <div className="text-xs text-mictlai-bone/70 mb-1 font-pixel">ESCROW WALLET</div>
-              <div className="flex justify-center items-center mb-2">
-                <span className="text-mictlai-turquoise font-pixel text-sm">{shortenAddress(ESCROW_WALLET_ADDRESS)}</span>
-              </div>
+          <div className="space-y-4">
+            {Object.entries(groupedBalances).map(([chain, chainBalances]) => {
+              const { totalUsd } = getChainSummary(chainBalances);
               
-              <a 
-                href={`https://debank.com/profile/${ESCROW_WALLET_ADDRESS}`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-block text-center border-2 border-mictlai-turquoise text-mictlai-turquoise font-pixel text-xs px-3 py-1 hover:bg-mictlai-turquoise/20 shadow-pixel transition-colors"
-              >
-                VIEW ON DEBANK 🔍
-              </a>
-              
-              <div className="mt-3 border-t-2 border-mictlai-gold/30 pt-2">
-                <div className="text-xs text-mictlai-bone/70 font-pixel">TOTAL VALUE</div>
-                <div className="text-mictlai-gold font-pixel text-lg">{totalValue}</div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              {Object.entries(groupBalancesByChain()).map(([chain, chainBalances]) => (
-                <div 
-                  key={chain}
-                  className="border-3 border-mictlai-gold/50 bg-black overflow-hidden shadow-pixel"
-                >
+              return (
+                <div key={chain} className="border-2 border-mictlai-gold/30 bg-black/20">
                   <div 
-                    className="px-3 py-2 bg-mictlai-obsidian border-b-2 border-mictlai-gold/50 flex justify-between items-center cursor-pointer"
+                    className="flex justify-between items-center p-3 cursor-pointer hover:bg-black/30"
                     onClick={() => toggleChainExpansion(chain)}
                   >
-                    <div className="font-pixel text-mictlai-gold text-sm">{getChainName(chain)}</div>
-                    <div className="flex items-center space-x-2">
-                      <div className="text-mictlai-bone font-pixel text-xs">
-                        {chainBalances.length} TOKEN{chainBalances.length !== 1 ? 'S' : ''}
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 flex items-center justify-center">
+                        {chain === 'base' && <span className="text-base">🔵</span>}
                       </div>
-                      <div className="w-4 h-4 flex items-center justify-center text-mictlai-gold">
-                        {expandedChains[chain] ? '▼' : '▶'}
-                      </div>
+                      <span className="font-pixel text-mictlai-bone">
+                        {getChainName(chain)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-mictlai-gold font-pixel">
+                        ${totalUsd} USD
+                      </span>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className={`h-5 w-5 transition-transform duration-200 ${expandedChains[chain] ? 'rotate-180' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
                   </div>
                   
                   {expandedChains[chain] && (
-                    <div className="divide-y-2 divide-mictlai-gold/20">
-                      {chainBalances.map((token) => (
-                        <div key={token.address} className="p-3 flex justify-between items-center">
-                          <div className="flex items-center">
-                            <span className="mr-2 text-lg">{token.icon}</span>
-                            <div>
-                              <div className="font-pixel text-mictlai-bone">{token.symbol}</div>
-                              <div className="text-xs text-mictlai-bone/50 font-pixel">
-                                {parseFloat(token.balanceFormatted).toFixed(4)}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-mictlai-gold font-pixel">
-                            {token.balanceUsd}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="border-t border-mictlai-gold/20">
+                      <table className="w-full">
+                        <thead className="bg-black/30">
+                          <tr className="text-left text-mictlai-bone/70">
+                            <th className="p-2 text-xs font-pixel">TOKEN</th>
+                            <th className="p-2 text-xs font-pixel">BALANCE</th>
+                            <th className="p-2 text-xs font-pixel">VALUE (USD)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {chainBalances.map((balance, index) => (
+                            <tr 
+                              key={balance.symbol}
+                              className={`
+                                ${index % 2 === 0 ? 'bg-black/10' : 'bg-black/20'}
+                                hover:bg-mictlai-gold/10
+                              `}
+                            >
+                              <td className="p-2 flex items-center gap-2">
+                                <span className="text-base">{balance.icon}</span>
+                                <span className="text-mictlai-bone font-pixel">{balance.symbol}</span>
+                              </td>
+                              <td className="p-2 font-mono text-mictlai-bone">
+                                {balance.balanceFormatted}
+                              </td>
+                              <td className="p-2 font-mono text-mictlai-gold">
+                                ${balance.balanceUsd}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-            
-            {lastUpdated && (
-              <div className="mt-3 text-center text-xs text-mictlai-bone/50 font-pixel">
-                LAST UPDATED: {lastUpdated.toLocaleTimeString()}
-              </div>
-            )}
-          </>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

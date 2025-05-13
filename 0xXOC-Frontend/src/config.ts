@@ -1,81 +1,68 @@
 // API configuration
 export const apiUrl = 'http://localhost:4000'; // Use your actual API endpoint
 
-// Celo blockchain configuration
-export const CELO_RPC_URL = 'https://forno.celo.org'; // Celo mainnet RPC URL
-export const CELO_EXPLORER_URL = 'https://celoscan.io';
-export const CELO_CHAIN_ID = 42220;
-
 // Base blockchain configuration
 export const BASE_RPC_URL = 'https://mainnet.base.org';
 export const BASE_EXPLORER_URL = 'https://basescan.org';
 export const BASE_CHAIN_ID = 8453;
 
-// Arbitrum blockchain configuration
-export const ARBITRUM_RPC_URL = 'https://arb1.arbitrum.io/rpc';
-export const ARBITRUM_EXPLORER_URL = 'https://arbiscan.io';
-export const ARBITRUM_CHAIN_ID = 42161;
-
-// Mantle blockchain configuration
-export const MANTLE_RPC_URL = 'https://rpc.mantle.xyz';
-export const MANTLE_EXPLORER_URL = 'https://explorer.mantle.xyz';
-export const MANTLE_CHAIN_ID = 5000;
-
-// zkSync Era blockchain configuration
-export const ZKSYNC_RPC_URL = 'https://mainnet.era.zksync.io';
-export const ZKSYNC_EXPLORER_URL = 'https://explorer.zksync.io';
-export const ZKSYNC_CHAIN_ID = 324;
-
-// 🏢 Token Contract Addresses on Celo
-export const CELO_TOKEN = "0x471EcE3750Da237f93B8E339c536989b8978a438"; // Native CELO
-export const USDC_TOKEN = "0xceba9300f2b948710d2653dd7b07f33a8b32118c"; // USDC on Celo
-export const USDT_TOKEN = "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e"; // Tether USD on Celo
-export const CUSD_TOKEN = "0x765DE816845861e75A25fCA122bb6898B8B1282a"; // cUSD (Celo Dollar)
-export const CEUR_TOKEN = "0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73"; // cEUR (Celo Euro)
-
-// 🏢 Token Contract Addresses on zkSync Era
-export const ZKSYNC_USDT_TOKEN = "0x493257fd37edb34451f62edf8d2a0c418852ba4c"; // USDT on zkSync Era
+// 🏢 Token Contract Addresses on Base
+export const XOC_TOKEN = "0x4C432421E24D67e30a0ff478c0ab36cB1d9A997C"; // XOC on Base
+export const MXNE_TOKEN = "0x5C7F8A570EE4E89C1C2E6881170d90B229C355e9"; // MXNe on Base
+export const USDC_TOKEN = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // USDC on Base
 
 // Default wallet address to check (replace with your wallet address)
 export const DEFAULT_WALLET_ADDRESS = "0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45";
 
 // 💰 Token Decimals
 export const TOKEN_DECIMALS = {
-  [CELO_TOKEN]: 18,
+  [XOC_TOKEN]: 18,
+  [MXNE_TOKEN]: 6,
   [USDC_TOKEN]: 6,
-  [USDT_TOKEN]: 6,
-  [CUSD_TOKEN]: 18,
-  [CEUR_TOKEN]: 18,
+  "ETH": 18,
 };
 
 // 💲 Approximate token prices in USD (fallback if oracle is unavailable)
 export const TOKEN_PRICES_USD = {
-  [CELO_TOKEN]: 0.28,  // $0.28 per CELO
+  [XOC_TOKEN]: 0.03,  // $0.03 per XOC
+  [MXNE_TOKEN]: 0.058, // $0.058 per MXNe
   [USDC_TOKEN]: 1.00,  // $1.00 per USDC
-  [USDT_TOKEN]: 1.00,  // $1.00 per USDT
-  [CUSD_TOKEN]: 1.00,  // $1.00 per cUSD
-  [CEUR_TOKEN]: 1.14,  // $1.14 per cEUR (based on EUR/USD exchange rate)
-  [ZKSYNC_USDT_TOKEN]: 1.00, // $1.00 per USDT on zkSync Era
+  "ETH": 3400.00,     // $3400 per ETH (estimated)
 };
 
 // Token Icons
 export const tokenIcons = {
-  CELO: '🟡',
-  USDT: '💵',
+  ETH: '💎',
+  XOC: '🇲🇽',
+  MXNe: '💰',
   USDC: '💵',
-  'cUSD': '💲',
-  'cEUR': '💶',
 }; 
 
 // 📋 Tracked tokens for balance checking
 export const TRACKED_TOKENS = [
   {
-    symbol: "CELO",
-    address: CELO_TOKEN,
+    symbol: "ETH",
+    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // Placeholder for native ETH
     decimals: 18,
     isNative: true,
-    price: TOKEN_PRICES_USD[CELO_TOKEN],
-    icon: "🟡",
+    price: TOKEN_PRICES_USD["ETH"],
+    icon: "💎",
+  },
+  {
+    symbol: "XOC",
+    address: XOC_TOKEN,
+    decimals: 18,
+    isNative: false,
+    price: TOKEN_PRICES_USD[XOC_TOKEN],
+    icon: "🇲🇽",
+  },
+  {
+    symbol: "MXNe",
+    address: MXNE_TOKEN,
+    decimals: 6,
+    isNative: false,
+    price: TOKEN_PRICES_USD[MXNE_TOKEN],
+    icon: "💰",
   },
   {
     symbol: "USDC",
@@ -84,38 +71,6 @@ export const TRACKED_TOKENS = [
     isNative: false,
     price: TOKEN_PRICES_USD[USDC_TOKEN],
     icon: "💵",
-  },
-  {
-    symbol: "USDT",
-    address: USDT_TOKEN,
-    decimals: 6,
-    isNative: false,
-    price: TOKEN_PRICES_USD[USDT_TOKEN],
-    icon: "💵",
-  },
-  {
-    symbol: "cUSD",
-    address: CUSD_TOKEN,
-    decimals: 18,
-    isNative: false,
-    price: TOKEN_PRICES_USD[CUSD_TOKEN],
-    icon: "💲",
-  },
-  {
-    symbol: "cEUR",
-    address: CEUR_TOKEN,
-    decimals: 18,
-    isNative: false,
-    price: TOKEN_PRICES_USD[CEUR_TOKEN],
-    icon: "💶",
-  },
-  {
-    symbol: "USDT-zkSync",
-    address: ZKSYNC_USDT_TOKEN,
-    decimals: 6,
-    isNative: false,
-    price: 1.00, // Standard stablecoin price
-    icon: "💱",
   },
 ]; 
 
