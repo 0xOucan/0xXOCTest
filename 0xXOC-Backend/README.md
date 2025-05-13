@@ -1,14 +1,12 @@
-# 🧠 MictlAI: AI-Powered Cross-Chain Bridge
+# 🏛️ 0xXOC Backend: P2P Token Marketplace API
 
 ## 📑 Table of Contents
 - [Overview](#-overview)
-- [The MictlAI Legend](#-the-mictlai-legend)
-- [Recent Improvements](#-recent-improvements)
+- [Features](#-features)
 - [Contract Information](#-contract-information)
 - [Quick Start](#-quick-start)
-- [Supported Networks](#-supported-networks)
+- [Supported Tokens](#-supported-tokens)
 - [Core Features](#-core-features)
-- [Operating Modes](#-operating-modes)
 - [API Server](#-api-server)
 - [Web Interface](#-web-interface)
 - [Technical Documentation](#-technical-documentation)
@@ -17,86 +15,65 @@
 
 ## 🌟 Overview
 
-MictlAI is an AI-powered cross-chain bridge that connects the Base, Arbitrum, Mantle, and zkSync Era networks through both web and Telegram interfaces. Our platform uses advanced AI and Agent Orchestration to provide:
+0xXOC is a P2P token marketplace that enables seamless trading between Mexican Pesos (MXN) and various cryptocurrencies on the Base network. Our platform leverages Coinbase's Agent Kit for secure escrow services and OXXO Spin QR codes for fiat on/off ramps. The 0xXOC backend provides:
 
-- 🌉 Seamless cross-chain transfers between Base, Arbitrum, Mantle, and zkSync Era
-- ⚛️ Bidirectional atomic swaps for trustless token exchanges
-- 📈 Real-time market insights for informed decisions
-- 🤖 Intelligent AI assistance for navigating blockchain interoperability
+- 🏦 P2P marketplace for MXN-to-cryptocurrency trading
+- 🧾 OXXO Spin QR code integration for Mexican Peso deposits
+- 🔐 Secure escrow wallet system with USDC, MXNe, XOC, and ETH support
+- 🔄 Automated order matching and fulfillment
+- 🤖 AI-powered assistance for transaction validation
 
-## 🏺 The MictlAI Legend
+## 🚀 Features
 
-In ancient Aztec mythology, Mictlantecuhtli ruled Mictlan, the underworld—a realm where souls journeyed after death, navigating nine challenging levels to reach their final destination.
+The 0xXOC backend implements several key features:
 
-Today, MictlAI emerges as a digital guardian of the blockchain underworld, facilitating seamless passage between disparate realms. Just as Mictlantecuhtli guided souls through Mictlan's levels, MictlAI guides your assets across the complex landscape of multiple blockchains.
-
-The journey of your tokens—from Base to Arbitrum, Mantle to zkSync Era—mirrors the soul's journey through Mictlan's territories. With MictlAI as your guide, these journeys become seamless, secure, and swift.
-
-Harnessing the power of artificial intelligence, MictlAI navigates the intricacies of cross-chain communication without relying on traditional bridges. The escrow wallet serves as the ferryman, ensuring your assets reach their destination safely.
-
-Where traditional bridges have failed through hacks and exploits, MictlAI's atomic swap mechanism creates a direct, trustless pathway between blockchain worlds—a pathway guarded by the wisdom of AI and the security of decentralized protocols.
-
-## 🚀 Recent Improvements
-
-We've implemented several significant improvements to our platform:
-
-### 🔮 zkSync Era Integration
-- ✅ **Complete zkSync Support**: Added full integration with zkSync Era network
-- 🌉 **Additional Swap Paths**: Built bidirectional swap support between zkSync and all other networks
-- 💰 **USDT on zkSync**: Native support for USDT transfers on zkSync Era
-- 🔄 **Comprehensive Testing**: Verified all zkSync swap combinations function properly
+### 🛒 P2P Marketplace
+- ✅ **Buying Orders**: Create and fulfill buying orders with OXXO Spin QR codes
+- ✅ **Selling Orders**: Create and fulfill selling orders with OXXO payments
+- ✅ **Order Management**: Track, cancel, and view detailed order history
+- ✅ **Escrow System**: Secure trading with automated escrow contract
 
 ### 🔐 Security Enhancements
 - ✅ **Wallet Integration**: Browser extension wallet signing instead of storing private keys
-- 🔑 **Transaction Handling**: Moved from `.env` private keys to secure browser wallet signatures
-- 🔒 **Frontend Integration**: Improved connection between frontend and backend for secure transaction signing
+- 🔑 **Transaction Handling**: Secure browser wallet signatures for all transactions
+- 🔒 **QR Code Encryption**: End-to-end encryption for OXXO Spin QR code data
+- 🔍 **Transaction Verification**: Coinbase Agent Kit verification for all transactions
 
-### 📊 Code Quality Improvements
-- 📝 **Modular Architecture**: Refactored complex functions into smaller, focused units
-- 🧩 **Utility Modules**: Created dedicated modules for transaction handling, logging, and API interactions
-- 🧹 **Constants Management**: Eliminated magic strings/numbers with centralized constant definitions
-- 📏 **Code Standards**: Improved consistency in code style with standardized patterns
-
-### 🔧 Technical Infrastructure
-- 📋 **Centralized Logging**: Implemented structured logging system with multiple severity levels
-- 🚦 **Rate Limiting**: Added API rate limiting to prevent abuse and DOS attacks
+### 📊 Technical Infrastructure
+- 📋 **Centralized Logging**: Structured logging system with multiple severity levels
+- 🚦 **Rate Limiting**: API rate limiting to prevent abuse and DOS attacks
 - ⚡ **Error Handling**: Enhanced error reporting with specific error types and better context
-- 📚 **Documentation**: Added detailed comments and improved API documentation
-
-### 🧪 Testing Framework
-- ✅ **Unit Tests**: Implemented Jest-based testing infrastructure
-- 🧪 **Test Coverage**: Added tests for core utilities and components
-- 🔄 **CI Integration**: Set up testing as part of the development workflow
+- 📚 **API Documentation**: Comprehensive API documentation for frontend integration
 
 ## 🔗 Contract Information
 
-### 📍 Network Contracts
-- **Base Network**: `0xabc123...` (XOC token contract)
-- **Arbitrum Network**: `0xdef456...` (MXNB token contract)
-- **Mantle Network**: `0xghi789...` (USDT token contract)
-- **zkSync Era Network**: `0xjkl012...` (USDT token contract)
+### 📍 Supported Tokens on Base Network
+- **USDC**: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` - USD Coin on Base
+- **MXNe**: `0x269caE7Dc59803e5C596c95756faEeBb6030E0aF` - Mexican Peso stablecoin on Base
+- **XOC**: `0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf` - Base chain Mexican Peso paired CDP stable coin
+- **ETH**: Native Base chain Ethereum token
 
-#### 📊 Contract Statistics
-- **Networks**: Base, Arbitrum, Mantle, and zkSync Era
-- **Transaction Types**: Cross-chain atomic swaps, token transfers
-- **View on Explorers**: [BaseScan](https://basescan.org), [ArbiScan](https://arbiscan.io), [MantleScan](https://mantlescan.xyz), [zkScan](https://era.zksync.network)
+### 📊 Token Statistics
+- **View on Explorer**: [BaseScan](https://basescan.org)
+- **Escrow Wallet**: [0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45](https://basescan.org/address/0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js v16+
 - npm v7+
-- A browser extension wallet (MetaMask, Rabby, etc.) connected to Base, Arbitrum, Mantle, or zkSync Era networks
+- A browser extension wallet (MetaMask, Rabby, etc.) connected to Base network
+- OpenAI API key for AI-powered transaction validation
 
 ### Installation
 
 ```bash
 # Clone both repositories
-git clone https://github.com/0xOucan/celo-mind-dn.git
-git clone https://github.com/0xOucan/celo-mind-web.git
+git clone https://github.com/yourusername/0xXOC-Backend.git
+git clone https://github.com/yourusername/0xXOC-Frontend.git
 
 # Use the launch script to start both services
-cp celo-mind-dn/launch.sh ./
+cp 0xXOC-Backend/launch.sh ./
 chmod +x launch.sh
 ./launch.sh
 ```
@@ -106,11 +83,11 @@ chmod +x launch.sh
 Required in your `.env` file:
 ```
 OPENAI_API_KEY=your_openai_api_key_here
-WALLET_PRIVATE_KEY=your_wallet_private_key_here  # Only needed for CLI/Telegram modes
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here  # Optional, for Telegram mode
+WALLET_PRIVATE_KEY=your_wallet_private_key_here  # For escrow wallet operations
+ESCROW_WALLET_PRIVATE_KEY=your_escrow_wallet_private_key_here  # Optional, falls back to WALLET_PRIVATE_KEY
 ```
 
-> **Security Update**: With the latest version, private keys are no longer required for the web interface. All transactions are now signed directly using your browser extension wallet, significantly improving security.
+> **Security Note**: The escrow wallet private key is only required for the API server to process escrow operations. Users connect to the marketplace using their browser extension wallets without exposing private keys.
 
 ### Running Tests
 
@@ -127,129 +104,69 @@ npm run test:watch
 npm run test:coverage
 ```
 
-Test coverage targets have been set to ensure code quality:
-- Functions: 70%
-- Branches: 70%
-- Lines: 70%
-- Statements: 70%
+## 🛠️ Supported Tokens
 
-## 🛠️ Supported Networks
+0xXOC marketplace supports the following tokens on the Base network:
 
-MictlAI seamlessly connects multiple blockchain networks:
+### USDC (💵)
+- USD Coin on Base network
+- Contract: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+- Decimals: 6
+- Buy with MXN through OXXO Spin QR codes
+- Sell for MXN payment
 
-### Base
-- Transfer XOC tokens to Arbitrum (receive MXNB)
-- Transfer XOC tokens to Mantle (receive USDT)
-- Transfer XOC tokens to zkSync Era (receive USDT)
-- Receive MXNB tokens from Arbitrum (converted from XOC)
-- Receive USDT tokens from Mantle (converted from XOC)
-- Receive USDT tokens from zkSync Era (converted from XOC)
-- Monitor transaction status across chains
+### MXNe (🪙)
+- Mexican Peso stablecoin on Base network backed by tokenized CETES
+- Contract: 0x269caE7Dc59803e5C596c95756faEeBb6030E0aF
+- Decimals: 6
+- Buy with MXN through OXXO Spin QR codes
+- Sell for MXN payment
+- Visit [Brale.xyz/stablecoins/MXNe](https://brale.xyz/stablecoins/MXNe) for more information
 
-### Arbitrum
-- Transfer MXNB tokens to Base (receive XOC)
-- Transfer MXNB tokens to Mantle (receive USDT)
-- Transfer MXNB tokens to zkSync Era (receive USDT)
-- Receive XOC tokens from Base (converted from MXNB)
-- Receive USDT tokens from Mantle (converted from MXNB)
-- Receive USDT tokens from zkSync Era (converted from MXNB)
-- Verify cross-chain transactions
+### XOC (🍫)
+- Base chain Mexican Peso paired CDP stable coin
+- Contract: 0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf
+- Decimals: 18
+- Buy with MXN through OXXO Spin QR codes
+- Sell for MXN payment
+- Visit [Xocolatl Finance](https://www.xocolatl.finance/) for more information
 
-### Mantle
-- Transfer USDT tokens to Base (receive XOC)
-- Transfer USDT tokens to Arbitrum (receive MXNB)
-- Transfer USDT tokens to zkSync Era (receive USDT)
-- Receive XOC tokens from Base (converted from USDT)
-- Receive MXNB tokens from Arbitrum (converted from USDT)
-- Receive USDT tokens from zkSync Era (converted from USDT)
-- Monitor transaction status across chains
-
-### zkSync Era
-- Transfer USDT tokens to Base (receive XOC)
-- Transfer USDT tokens to Arbitrum (receive MXNB)
-- Transfer USDT tokens to Mantle (receive USDT)
-- Receive XOC tokens from Base (converted from USDT)
-- Receive MXNB tokens from Arbitrum (converted from USDT)
-- Receive USDT tokens from Mantle (converted from USDT)
-- Monitor transaction status across chains
+### ETH (💎)
+- Native Base chain Ethereum
+- Decimals: 18
+- Buy with MXN through OXXO Spin QR codes
+- Sell for MXN payment
 
 ## 🔑 Core Features
 
-### Cross-Chain Operations
-- Initiate cross-chain transfers with atomic swap security
-- Monitor transaction status across all networks
-- Verify transaction completion with explorer links
+### Marketplace Operations
+- Create buying orders with specific tokens and MXN amounts
+- Create selling orders with tokens held in your wallet
+- Fill existing orders with OXXO Spin QR codes or token transfers
+- Cancel your orders and recover escrowed assets
+- Track all your marketplace activity in real-time
 
 ### Token Operations
 - Check token balances with USD conversion
-- Transfer tokens between wallets on the same network
-- Approve token spending for cross-chain operations
+- Transfer tokens between wallets on Base network
+- Approve token spending for marketplace operations
 
-### Bridge Operations
-- Initiate atomic swaps between networks
-- Verify transaction completion on both sides
-- Recover from failed transactions with safety mechanisms
+### OXXO Integration
+- Upload and process OXXO Spin QR codes
+- Validate QR code data and expiration
+- Securely store and retrieve QR code images
+- End-to-end encryption for sensitive payment data
 
 ### Safety Features
-- Pre-transaction network validation
+- Pre-transaction wallet validation
 - Balance and allowance verification
 - Detailed error messages
 - Transaction confirmation monitoring
-- Cross-chain verification for all operations
-
-## 🖥️ Operating Modes
-
-MictlAI offers three flexible operating modes:
-
-### 💬 Chat Mode
-Interactive command-line interface for direct user interaction with natural language inputs.
-
-```bash
-# Example chat session
-You: check wallet portfolio
-🧠 Processing...
-
-### 💰 **Complete Portfolio Overview** 💰
-**Address**: `0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45`  
-**Total Portfolio Value**: **$4.47 USD**
-
-#### 💵 **Token Balances on Base** 💼
-- 🟡 **XOC**: 1.32 ($0.66)
-
-#### 💵 **Token Balances on Arbitrum** 💼
-- 💵 **MXNB**: 0.28 ($0.28)
-
-#### 💵 **Token Balances on Mantle** 💼
-- 💵 **USDT**: 0.5 ($0.5)
-
-#### 💵 **Token Balances on zkSync Era** 💼
-- 💵 **USDT**: 1.0 ($1.0)
-
-#### 🌉 **Pending Bridge Transactions** 🏦
-- **Base → zkSync Era**: Transferring 0.5 XOC (In Progress)
-- **Arbitrum → Base**: Transferring 0.2 MXNB (Completed)
-- **Mantle → Base**: Transferring 0.1 USDT (Completed)
-```
-
-### 🤖 Autonomous Mode
-Bot operates independently, executing transactions at set intervals based on predefined strategies.
-
-### 📱 Telegram Mode
-Interface through Telegram messenger with convenient command structure:
-
-```
-/start - Initialize the bot
-/menu - See all available commands
-/help_bridge - Bridge operation commands
-/help_base - Base network commands
-/help_arbitrum - Arbitrum network commands
-/help_mantle - Mantle network commands
-/help_zksync - zkSync Era network commands
-```
+- Escrow wallet security with multi-layer protection
 
 ## 🔌 API Server
 
-MictlAI includes a built-in API server that exposes the AI agent functionality via REST endpoints, enabling integration with the web interface and other applications.
+0xXOC includes a built-in API server that powers the frontend marketplace and provides comprehensive endpoints for all marketplace functionality.
 
 ### API Architecture
 
@@ -257,31 +174,27 @@ The API server is implemented in `src/api-server.ts` and provides:
 
 - **Express Backend**: Lightweight and fast Node.js server
 - **CORS Support**: Cross-origin requests for frontend integration
-- **Streaming Responses**: Real-time updates during AI processing
+- **Streaming Responses**: Real-time updates during processing
 - **Error Handling**: Robust error reporting for debugging
 - **Wallet Connection**: Secure connection of browser extension wallets
 - **Transaction Management**: Pending transaction tracking and status updates
-- **Agent Caching**: Efficient agent reuse with expiration for performance
-
-### Technical Improvements
-
-Recent technical improvements to the API server include:
-
-- **Rate Limiting**: Protection against API abuse with configurable rate windows
-- **Centralized Logging**: Structured logging with different severity levels
-- **Transaction Management**: Dedicated utilities for better transaction reliability
-- **Error Handling**: Enhanced error context and reporting
-- **API Documentation**: Improved endpoint documentation
-- **Code Structure**: Modular organization with better maintainability
+- **AI Verification**: Optional AI-powered transaction validation using Coinbase Agent Kit
 
 ### Key Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/agent/chat` | POST | Process natural language commands through the AI agent |
 | `/api/wallet/connect` | POST | Connect a browser extension wallet address |
 | `/api/transactions/pending` | GET | Retrieve pending transactions that need wallet signatures |
 | `/api/transactions/:txId/update` | POST | Update transaction status after signing |
+| `/api/selling-orders` | GET | Get all selling orders matching specified criteria |
+| `/api/selling-orders` | POST | Create a new selling order |
+| `/api/selling-orders/:orderId` | GET | Get details for a specific selling order |
+| `/api/selling-orders/:orderId/fill` | POST | Fill a selling order with OXXO QR code |
+| `/api/buying-orders` | GET | Get all buying orders matching specified criteria |
+| `/api/buying-orders` | POST | Create a new buying order |
+| `/api/buying-orders/:orderId` | GET | Get details for a specific buying order |
+| `/api/buying-orders/:orderId/fill` | POST | Fill a buying order with token transfer |
 | `/api/health` | GET | Health check endpoint for monitoring |
 
 ### Starting the API Server
@@ -294,25 +207,16 @@ npm run api
 npm run api:prod
 ```
 
-### Integration with Frontend
-
-The API server powers the [MictlAI Web Interface](https://github.com/0xOucan/celo-mind-web), allowing users to interact with the AI agent through a modern web UI. The backend handles:
-
-- Natural language processing of user commands
-- Blockchain transaction creation
-- Wallet integration
-- Cross-chain operations between Base, Arbitrum, Mantle, and zkSync Era
-
 ## 🌐 Web Interface
 
-MictlAI has a companion web interface available at [MictlAI Web](https://github.com/0xOucan/celo-mind-web) that provides:
+0xXOC has a companion web interface available in the [0xXOC-Frontend](https://github.com/yourusername/0xXOC-Frontend) repository that provides:
 
-- 💬 Interactive AI chat interface for cross-chain commands
-- 💰 Real-time wallet balance tracking with USD conversion
-- 🌓 Light/Dark theme toggle with system preference detection
-- 📱 Responsive design for desktop and mobile
-- 🔒 Browser extension wallet integration (MetaMask, Rabby, etc.)
-- 🔄 Transaction monitoring and signing directly from your wallet
+- 💰 Token marketplace with buying and selling order creation
+- 🧾 OXXO Spin QR code scanning and processing
+- 👛 Browser extension wallet integration
+- 💼 Order management and transaction history
+- 📊 Wallet and escrow balance monitoring
+- 🌓 Light/Dark theme toggle
 
 ### Connection Setup
 
@@ -331,88 +235,61 @@ This script:
 
 ## 📚 Technical Documentation
 
-### Protocol Examples
+### API Examples
 
-#### Bridge Commands
+#### Marketplace Commands
 ```
-transfer 5 XOC from Base to Arbitrum
-transfer 10 MXNB from Arbitrum to Base
-transfer 5 XOC from Base to Mantle
-transfer 1 USDT from Mantle to Base
-transfer 10 MXNB from Arbitrum to Mantle
-transfer 2 USDT from Mantle to Arbitrum
-transfer 0.5 XOC from Base to zkSync Era
-transfer 1 USDT from zkSync Era to Base
-check status of transaction 0x123...
-view balance on Base
-view balance on Arbitrum
-view balance on Mantle
-view balance on zkSync Era
-```
+# Create a selling order
+POST /api/selling-orders
+{
+  "token": "XOC",
+  "amount": "100",
+  "mxnAmount": "100",
+  "memo": "Optional note about the order"
+}
 
-#### Base Network Commands
-```
-approve 5 XOC for bridge
-check XOC balance on Base
-get quote for bridging 1 XOC to Arbitrum
-get quote for bridging 1 XOC to Mantle
-get quote for bridging 1 XOC to zkSync Era
-view pending transactions on Base
-```
+# Fill a selling order
+POST /api/selling-orders/:orderId/fill
+{
+  "qrCodeData": "OXXO Spin QR Code JSON data"
+}
 
-#### Arbitrum Network Commands
-```
-approve 5 MXNB for bridge
-check MXNB balance on Arbitrum
-get quote for bridging 1 MXNB to Base
-get quote for bridging 1 MXNB to Mantle
-get quote for bridging 1 MXNB to zkSync Era
-view pending transactions on Arbitrum
-```
+# Create a buying order
+POST /api/buying-orders
+{
+  "token": "XOC",
+  "tokenAmount": "100",
+  "mxnAmount": 100,
+  "qrCodeData": "OXXO Spin QR Code JSON data",
+  "memo": "Optional note about the order"
+}
 
-#### Mantle Network Commands
-```
-approve 5 USDT for bridge
-check USDT balance on Mantle
-get quote for bridging 1 USDT to Base
-get quote for bridging 1 USDT to Arbitrum
-get quote for bridging 1 USDT to zkSync Era
-view pending transactions on Mantle
-```
-
-#### zkSync Era Network Commands
-```
-approve 5 USDT for bridge
-check USDT balance on zkSync Era
-get quote for bridging 1 USDT to Base
-get quote for bridging 1 USDT to Arbitrum
-get quote for bridging 1 USDT to Mantle
-view pending transactions on zkSync Era
+# Fill a buying order
+POST /api/buying-orders/:orderId/fill
 ```
 
 ### Error Handling
-MictlAI handles various error scenarios with clear messaging:
+0xXOC handles various error scenarios with clear messaging:
 - Insufficient balances
-- Insufficient allowances
-- Network mismatches
-- Failed transactions
+- Invalid QR code data
+- Invalid order status
+- Transaction failures
 - Input validation failures
-- Cross-chain verification failures
+- Authorization failures
 
 ## 🔐 Security
 
 ### Smart Contract Security
-- ✅ Proven contract track record
-- 🔍 Continuous monitoring of all contract interactions
+- ✅ Proven token contracts with audit history
+- 🔍 Continuous monitoring of all escrow operations
 - 🛡️ Automated security checks before transactions
 
 ### User Security
-- 🔒 No private key storage for web users - browser wallets only
+- 🔒 No private key storage for users - browser wallets only
 - ✅ Explicit transaction approval required through wallet
-- 🛡️ Cross-chain transaction verification
+- 🛡️ End-to-end encryption for payment data
 - 🔍 Clear transaction status monitoring
 - 🚨 Comprehensive error handling
-- 🔐 Network validation to ensure correct network connection
 
 ### Enhanced Backend Security
 - 🔑 Secure transaction management with dedicated transaction utilities
@@ -424,85 +301,17 @@ MictlAI handles various error scenarios with clear messaging:
 
 ### Best Practices
 - 📝 Regular security audits
-- 🚫 No storage of sensitive data
+- 🚫 No storage of sensitive data in plaintext
 - 📊 Real-time transaction monitoring
 - ⚡ Rate limiting for API calls
 - 🔄 Automatic session timeouts
 - 🧪 Comprehensive unit testing for critical components
 
-## 📱 Interface Examples
-
-### Portfolio Overview
-```
-### 💰 **Complete Portfolio Overview** 💰
-**Address**: `0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45`  
-**Total Portfolio Value**: **$4.47 USD**
-
-#### 💵 **Token Balances on Base** 💼
-- 🟡 **XOC**: 1.32 ($0.66)
-
-#### 💵 **Token Balances on Arbitrum** 💼
-- 💵 **MXNB**: 0.28 ($0.28)
-
-#### 💵 **Token Balances on Mantle** 💼
-- 💵 **USDT**: 0.5 ($0.5)
-
-#### 💵 **Token Balances on zkSync Era** 💼
-- 💵 **USDT**: 1.0 ($1.0)
-
-#### 🌉 **Pending Bridge Transactions** 🏦
-- **Base → zkSync Era**: Transferring 0.5 XOC (In Progress)
-- **Arbitrum → Base**: Transferring 0.2 MXNB (Completed)
-- **Mantle → Base**: Transferring 0.1 USDT (Completed)
-```
-
-### Bridge Quote Example
-```
-📊 **Bridge Quote**
-
-💱 1 XOC ➡️ 0.361129784661843345 MXNB
-📈 Exchange Rate: 1 XOC = 0.361130 MXNB
-
-💱 1 XOC ➡️ 0.049750 USDT
-📈 Exchange Rate: 1 XOC = 0.049750 USDT
-
-💱 1 XOC ➡️ 0.049750 USDT (zkSync Era)
-📈 Exchange Rate: 1 XOC = 0.049750 USDT
-
-⚠️ Rate may fluctuate slightly. Cross-chain transaction will take 5-15 minutes to complete.
-```
-
-## 👨‍💻 Development
-
-To extend the platform:
-1. Update relevant action providers in `src/action-providers/`
-2. Add new schemas in `src/schemas/`
-3. Update configurations in `src/config/`
-4. Test thoroughly on testnets before production deployment
-
-### Code Architecture Improvements
-The project now features improved code architecture:
-
-- **Utility Modules**: 
-  - `transaction-utils.ts`: Centralized transaction handling
-  - `logger.ts`: Structured logging system
-  - `rate-limiter.ts`: API rate limiting
-
-- **Testing**: 
-  - Jest-based testing framework
-  - Unit tests for core functionality
-  - TypeScript-friendly test configuration
-
-- **Error Handling**:
-  - Specific error types for different scenarios
-  - Context-rich error messages
-  - Error logging for better troubleshooting
-
 ## 🔗 Resources
 
 ### Repository Links
-- **Backend (MictlAI DN)**: [https://github.com/0xOucan/celo-mind-dn](https://github.com/0xOucan/celo-mind-dn)
-- **Frontend (MictlAI Web)**: [https://github.com/0xOucan/celo-mind-web](https://github.com/0xOucan/celo-mind-web)
+- **Backend (0xXOC-Backend)**: [GitHub Repository](https://github.com/yourusername/0xXOC-Backend)
+- **Frontend (0xXOC-Frontend)**: [GitHub Repository](https://github.com/yourusername/0xXOC-Frontend)
 
 ### Contact & Social
 - **Twitter**: [@0xoucan](https://x.com/0xoucan)

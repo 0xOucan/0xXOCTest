@@ -1,7 +1,7 @@
-# 🧠 MictlAI Web Interface
+# 🏛️ 0xXOC: P2P Token Marketplace
 
 ## 📑 Table of Contents
-- [The MictlAI Legend](#-the-mictlai-legend)
+- [Overview](#-overview)
 - [Features](#-features)
 - [Getting Started](#-getting-started)
 - [Backend Integration](#-backend-integration)
@@ -9,40 +9,36 @@
 - [Key Components](#-key-components)
 - [Running the Complete Stack](#-running-the-complete-stack)
 - [Security Considerations](#-security-considerations)
-- [Cross-Chain Bridge Features](#-cross-chain-bridge-features)
+- [Marketplace Features](#-marketplace-features)
 - [Contributing](#-contributing)
 - [Related Projects](#-related-projects)
 - [Contact](#-contact)
 
-## 🏺 The MictlAI Legend
+## 🌟 Overview
 
-In ancient Aztec mythology, Mictlantecuhtli ruled Mictlan, the underworld—a realm where souls journeyed after death, navigating nine challenging levels to reach their final destination.
+0xXOC is a P2P marketplace designed to bridge the gap between cryptocurrency and Mexican Pesos through OXXO Spin QR codes. Our platform enables users to buy and sell digital assets using Mexico's most accessible payment method, making cryptocurrency accessible to everyone in Mexico.
 
-Today, MictlAI emerges as a digital guardian of the blockchain underworld, facilitating seamless passage between disparate realms. Just as Mictlantecuhtli guided souls through Mictlan's levels, MictlAI guides your assets across the complex landscape of multiple blockchains.
+The 0xXOC platform handles the entire trading process with a secure escrow system, protecting both buyers and sellers while ensuring seamless transactions. All data is encrypted and stored on-chain, with transactions verified and protected by the Coinbase Agentkit AI agent on the Base network.
 
-The journey of your tokens—from Base to Arbitrum, Mantle to zkSync Era—mirrors the soul's journey through Mictlan's territories. With MictlAI as your guide, these journeys become seamless, secure, and swift.
+## ✨ Features
 
-Where traditional bridges have failed through hacks and exploits, MictlAI's atomic swap mechanism creates a direct, trustless pathway between blockchain worlds—a pathway guarded by the wisdom of AI and the security of decentralized protocols.
-
-## 🌟 Features
-
-- 💬 Natural language AI chat interface for cross-chain operations
+- 🛒 Create and browse buying/selling orders for cryptocurrency
+- 💸 Seamless integration with OXXO Spin QR codes for fiat payments
+- 🏦 Support for multiple tokens: XOC, MXNe, USDC, and ETH
 - 👛 External wallet support with secure transaction handling
+- 🔐 Secure escrow system for protected trades
 - 🔄 Real-time transaction monitoring and status tracking
-- 💰 Real-time wallet balance tracking with USD conversion
+- 💰 Wallet balance tracking with USD conversion
 - 🌓 Light/Dark theme toggle with system preference detection
 - 📱 Responsive design for desktop and mobile devices
-- 🔒 Direct blockchain connection for verification
-- ⚡ Cross-chain bridging between Base, Arbitrum, Mantle, and zkSync Era networks
-- 🛡️ Enhanced security with no stored private keys
-- 🔌 Network validation and automatic network switching
+- 🔒 Enhanced security with browser extension wallet integration
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js v16+ and npm v7+
-- MictlAI backend API running and accessible
+- 0xXOC backend API running and accessible
 - Web browser with JavaScript enabled
 - Browser extension wallet (MetaMask, Rabby, etc.) for blockchain transactions
 
@@ -50,11 +46,11 @@ Where traditional bridges have failed through hacks and exploits, MictlAI's atom
 
 ```bash
 # Clone both repositories
-git clone https://github.com/0xOucan/celo-mind-dn.git
-git clone https://github.com/0xOucan/celo-mind-web.git
+git clone https://github.com/yourusername/0xXOC-Backend.git
+git clone https://github.com/yourusername/0xXOC-Frontend.git
 
 # Use the launch script to start both services
-cp celo-mind-dn/launch.sh ./
+cp 0xXOC-Backend/launch.sh ./
 chmod +x launch.sh
 ./launch.sh
 ```
@@ -70,41 +66,38 @@ The launch script automatically:
 The application requires the following environment variables:
 
 ```
-# API endpoint for the MictlAI backend
+# API endpoint for the 0xXOC backend
 VITE_API_URL=http://localhost:4000
 
-# Explorer URLs for transaction links
+# Explorer URL for transaction links
 VITE_BASE_EXPLORER_URL=https://basescan.org
-VITE_ARBITRUM_EXPLORER_URL=https://arbiscan.io
-VITE_MANTLE_EXPLORER_URL=https://mantlescan.xyz
-VITE_ZKSYNC_EXPLORER_URL=https://explorer.zksync.io
 
 # Privy App ID for wallet integration
 VITE_PRIVY_APP_ID=your_privy_app_id
 
-# Escrow wallet address for liquidity monitoring
+# Escrow wallet address for monitoring
 VITE_ESCROW_WALLET_ADDRESS=0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45
 ```
 
 ## 🔌 Backend Integration
 
-This web interface connects to the [MictlAI backend API](https://github.com/0xOucan/celo-mind-dn) to process commands and execute blockchain operations.
+This web interface connects to the [0xXOC backend API](https://github.com/yourusername/0xXOC-Backend) to process marketplace orders and execute blockchain operations.
 
 ### Communication Flow
 
-1. **User Interface**: The web frontend collects user inputs through a conversational interface
-2. **API Requests**: Frontend sends natural language commands to the `/api/agent/chat` endpoint
-3. **AI Processing**: Backend processes commands using advanced AI and Agent Orchestration
+1. **User Interface**: The web frontend collects user inputs for creating or filling orders
+2. **API Requests**: Frontend sends order data and OXXO QR codes to appropriate endpoints
+3. **Order Processing**: Backend processes orders and manages the escrow system
 4. **Blockchain Operations**: Backend creates transaction requests for the frontend wallet to sign
 5. **Transaction Handling**: Frontend monitors and processes pending transactions with the connected wallet
 6. **Response Handling**: Frontend displays results and updates wallet balances
 
 ### Wallet Integration
 
-MictlAI supports external wallets through the Privy integration:
+0xXOC supports external wallets through the Privy integration:
 
 - **Wallet Connection**: Connect any EIP-1193 compatible wallet (MetaMask, Rabby, etc.)
-- **Transaction Signing**: Transactions generated by the AI are sent to your wallet for signing
+- **Transaction Signing**: Transactions generated by the backend are sent to your wallet for signing
 - **Transaction Monitoring**: Monitor transaction status in real-time through the UI
 - **Wallet Balances**: View your wallet's token balances and total portfolio value
 - **Network Switching**: Automatic network detection and switching
@@ -113,22 +106,24 @@ MictlAI supports external wallets through the Privy integration:
 ## 📂 Project Structure
 
 ```
-celo-mind-web/
+0xXOC-Frontend/
 ├── src/
 │   ├── components/           # React UI components
-│   │   ├── ChatInterface.tsx # AI chat interface
 │   │   ├── Header.tsx        # Application header
 │   │   ├── Icons.tsx         # SVG icon components
 │   │   ├── InfoPanel.tsx     # Welcome/information panel
 │   │   ├── WalletBalances.tsx # Wallet balance display
 │   │   ├── WalletConnect.tsx  # Wallet connection component
 │   │   ├── MainLayout.tsx    # Layout wrapper with dark mode support
+│   │   ├── OrderCard.tsx     # Order display component
+│   │   ├── CreateOrderForm.tsx # Form for creating new orders
+│   │   ├── QrCodeUploader.tsx # QR code upload and processing
 │   │   └── TransactionMonitor.tsx # Transaction monitoring UI
 │   ├── providers/
 │   │   ├── PrivyProvider.tsx  # Privy wallet provider integration
 │   │   └── WalletContext.tsx  # Wallet state management
 │   ├── services/
-│   │   ├── agentService.ts    # Agent API communication
+│   │   ├── marketplaceService.ts # Marketplace API communication
 │   │   ├── blockchainService.ts # Blockchain connection services
 │   │   └── transactionService.ts # Transaction handling and processing
 │   ├── App.tsx               # Main application component
@@ -168,21 +163,21 @@ Real-time balance tracking with:
 - One-click refresh functionality
 - Blockchain explorer integration for verification
 
-### 4. LiquidityMonitor
-Escrow wallet liquidity tracking with:
-- Displays available liquidity of specific tokens (MXNB, USDT, XOC)
-- Monitors balances across multiple chains (Base, Arbitrum, Mantle, zkSync)
-- Direct link to Debank profile for detailed analysis
-- Configurable escrow wallet address via environment variables
-- Automatic refresh of balance data
+### 4. OrderManagement
+Marketplace order functionality:
+- Create buying and selling orders
+- Browse available marketplace orders
+- Fill orders with OXXO QR codes or tokens
+- Monitor order status and history
+- Cancel your own orders
 
-### 5. ChatInterface
-Intelligent conversation interface with:
-- Message history tracking
-- Stream-based response handling
-- Transaction status updates
-- Response formatting and error handling
-- Pre-checks for wallet connection
+### 5. QrCodeHandler
+Processes OXXO Spin QR codes:
+- Secure upload and parsing of QR code data
+- QR code image encryption and storage
+- QR code decryption for verified buyers
+- Validation of QR code data and expiration
+- Status tracking for QR code redemption
 
 ## 🌐 Running the Complete Stack
 
@@ -199,10 +194,11 @@ This will start:
 
 ## 🔐 Security Considerations
 
-The MictlAI web interface implements several security best practices:
+The 0xXOC web interface implements several security best practices:
 
 - **No Private Key Storage**: Private keys never leave your wallet - all transactions require explicit approval
 - **Secure Wallet Connections**: Implemented via Privy integration with industry-standard security
+- **QR Code Encryption**: OXXO Spin QR codes are encrypted end-to-end for maximum security
 - **Transaction Verification**: All transactions include clear information about what you're approving
 - **Network Validation**: Automatic verification of the correct network before transactions
 - **Session-Based Authentication**: Wallet connections persist only for the current session
@@ -211,33 +207,40 @@ The MictlAI web interface implements several security best practices:
 - **Data Validation**: All inputs are validated before processing to prevent injection attacks
 - **Rate Limiting**: API endpoints implement rate limiting to prevent abuse
 
-## 🔄 Cross-Chain Bridge Features
+## 🛒 Marketplace Features
 
-MictlAI implements a robust cross-chain bridging system:
+0xXOC implements a comprehensive P2P marketplace system:
 
-1. **Multiple Networks**: Supports bridging between Base, Arbitrum, Mantle, and zkSync Era networks
-2. **Multiple Tokens**: Transfer XOC, MXNB, and USDT tokens across chains
-3. **Atomic Swaps**: Trustless cross-chain token swaps using an escrow mechanism
-4. **Real-time Status**: Monitor swap progress across chains in real-time
-5. **Fee Transparency**: Clear display of bridge fees (0.5%) and final received amount
-6. **Explorer Integration**: Direct links to view transactions on BaseScan, ArbiScan, MantleScan, and zkSync Explorer
+### Supported Tokens
 
-### Supported Bridges
+| Token | Symbol | Contract Address | Description |
+|-------|--------|-----------------|-------------|
+| USDC | 💵 | 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 | USD Coin on Base network |
+| MXNe | 🪙 | 0x269caE7Dc59803e5C596c95756faEeBb6030E0aF | Mexican Peso stablecoin backed by tokenized CETES |
+| XOC | 🍫 | 0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf | Base chain Mexican Peso paired CDP stable coin |
+| ETH | 💎 | Native token | Native Base chain Ethereum |
 
-| From | To | Tokens |
-|------|----|----|
-| Base | Arbitrum | XOC → MXNB |
-| Arbitrum | Base | MXNB → XOC |
-| Base | Mantle | XOC → USDT |
-| Mantle | Base | USDT → XOC |
-| Arbitrum | Mantle | MXNB → USDT |
-| Mantle | Arbitrum | USDT → MXNB |
-| Base | zkSync Era | XOC → USDT |
-| zkSync Era | Base | USDT → XOC |
-| Arbitrum | zkSync Era | MXNB → USDT |
-| zkSync Era | Arbitrum | USDT → MXNB |
-| Mantle | zkSync Era | USDT → USDT |
-| zkSync Era | Mantle | USDT → USDT |
+### Order Types
+
+1. **Buying Orders**:
+   - User provides an OXXO Spin QR code with MXN amount
+   - Specifies which token and amount they want to buy
+   - QR code is encrypted and stored securely
+   - Sellers can fill the order by transferring tokens
+
+2. **Selling Orders**:
+   - User escrows tokens they want to sell
+   - Specifies the MXN amount they want to receive
+   - Buyers can fill the order with an OXXO Spin QR code
+   - Once verified, tokens are released to the buyer
+
+### Escrow System
+
+The 0xXOC marketplace uses a secure escrow system to protect all trades:
+- Tokens are held in escrow during the trading process
+- Escrow is controlled by smart contracts and verified by Coinbase Agent Kit
+- All transactions are recorded on-chain for full transparency
+- Escrow is only released when all conditions are met
 
 ## 👨‍💻 Contributing
 
@@ -251,7 +254,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 🔗 Related Projects
 
-- [MictlAI Backend (DN)](https://github.com/0xOucan/celo-mind-dn) - AI agent backend for cross-chain operations
+- [0xXOC Backend](https://github.com/yourusername/0xXOC-Backend) - Backend API for the P2P marketplace
 
 ## 📧 Contact
 
