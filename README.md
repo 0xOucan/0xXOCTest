@@ -3,12 +3,17 @@
 > 🏆 **Base Batch LatAm Hackathon Project** - Stablecoins Track (DeFi P2P Exchange)
 > 
 > GitHub: [https://github.com/0xOucan/0xXOC-AIP2PMXNExchange](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange)
+>
+> Hackathon Submission: [Devfolio Project Page](https://devfolio.co/projects/xdollarxoc-f368)
+>
+> 📺 [Watch Demo Video](https://www.youtube.com/watch?v=W6V7a1Rt7FQ)
 
 ## 📑 Table of Contents
 - [Overview](#-overview)
 - [Problem Statement](#-problem-statement)
 - [Solution](#-solution)
 - [Features](#-features)
+- [Demo](#-demo)
 - [Architecture](#-architecture)
 - [Getting Started](#-getting-started)
 - [Contract Information](#-contract-information)
@@ -67,6 +72,21 @@ Meanwhile, OXXO stores are ubiquitous in Mexico (19,000+ locations), and the OXX
 - 📱 Responsive design for desktop and mobile devices
 - 🔒 Enhanced security with browser extension wallet integration
 - 🤖 AI-powered transaction verification using Coinbase AgentKit
+
+## 🎬 Demo
+
+Watch our demo video to see 0xXOC in action:
+
+[![0xXOC Demo Video](https://img.youtube.com/vi/W6V7a1Rt7FQ/0.jpg)](https://www.youtube.com/watch?v=W6V7a1Rt7FQ)
+
+The demo showcases:
+- Creating buying and selling orders
+- Processing OXXO Spin QR codes
+- Transaction verification with Coinbase AgentKit
+- Wallet integration and balance tracking
+- Complete P2P trading flow
+
+For more details, check out our [Base Batch LatAm hackathon submission](https://devfolio.co/projects/xdollarxoc-f368).
 
 ## 🏗️ Architecture
 
@@ -177,7 +197,7 @@ Additional transaction details can be found on [our Gist](https://gist.github.co
 0xXOC currently operates on the Base network, with support for:
 
 - **Base**: Fast, low-cost network with all supported tokens (USDC, MXNe, XOC, ETH)
-- **Future Networks**: Expansion to additional networks planned based on community feedback
+
 
 ## 🔌 Backend Integration
 
