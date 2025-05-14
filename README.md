@@ -1,5 +1,9 @@
 # 🏛️ 0xXOC: P2P Token Marketplace for Mexico
 
+> 🏆 **Base Batch LatAm Hackathon Project** - Stablecoins Track (DeFi P2P Exchange)
+> 
+> GitHub: [https://github.com/0xOucan/0xXOC-AIP2PMXNExchange](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange)
+
 ## 📑 Table of Contents
 - [Overview](#-overview)
 - [Problem Statement](#-problem-statement)
@@ -8,6 +12,7 @@
 - [Architecture](#-architecture)
 - [Getting Started](#-getting-started)
 - [Contract Information](#-contract-information)
+- [Onchain Transaction Proofs](#-onchain-transaction-proofs)
 - [Supported Networks](#-supported-networks)
 - [Backend Integration](#-backend-integration)
 - [Core Features](#-core-features)
@@ -24,6 +29,8 @@
 
 0xXOC is a peer-to-peer marketplace platform that bridges the gap between Mexican Pesos (MXN) and cryptocurrencies through seamless integration with OXXO Spin QR codes. By leveraging Mexico's most accessible payment method, we're making crypto accessible to everyone in Mexico - regardless of technical expertise or banking status.
 
+As a Base Batch LatAm hackathon project, 0xXOC focuses on providing a practical solution for remittances and cross-border payments using Base network's stablecoins (USDC, MXNe, XOC), enabling people in the US to easily send money to relatives in Mexico.
+
 ## 🇲🇽 Problem Statement
 
 In Mexico, many people face significant barriers when trying to access cryptocurrency:
@@ -32,6 +39,7 @@ In Mexico, many people face significant barriers when trying to access cryptocur
 - **Technical Barriers**: Many platforms assume technical knowledge that average users don't possess
 - **Banking Limitations**: Not all Mexicans have access to bank accounts or credit cards required by exchanges
 - **Trust Issues**: Concerns about security and fraud prevent many from exploring crypto options
+- **Remittance Challenges**: US-to-Mexico remittances often involve high fees and slow settlement times
 
 Meanwhile, OXXO stores are ubiquitous in Mexico (19,000+ locations), and the OXXO Spin app has become a widely adopted payment method with a simplified KYC process that millions of Mexicans already use daily.
 
@@ -44,12 +52,13 @@ Meanwhile, OXXO stores are ubiquitous in Mexico (19,000+ locations), and the OXX
 3. **Local Integration**: Designed specifically for the Mexican market and local payment methods
 4. **No Technical Barriers**: User-friendly interface with straightforward buying and selling processes
 5. **Direct P2P Trading**: Connects buyers and sellers directly without centralized exchange fees
+6. **Efficient Remittances**: People in the US can send stablecoins (USDC, MXNe) that are redeemable for Mexican Pesos
 
 ## 🌟 Features
 
 - 🛒 Create and browse buying/selling orders for cryptocurrency
 - 💸 Seamless integration with OXXO Spin QR codes for fiat payments
-- 🏦 Support for multiple tokens: XOC, MXNe, USDC, and ETH on Base network
+- 🏦 Support for multiple stablecoins: MXNe, USDC, XOC, and ETH on Base network
 - 👛 External wallet support with secure transaction handling
 - 🔐 Secure escrow system for protected trades
 - 🔄 Real-time transaction monitoring and status tracking
@@ -57,6 +66,7 @@ Meanwhile, OXXO stores are ubiquitous in Mexico (19,000+ locations), and the OXX
 - 🌓 Light/Dark theme toggle with system preference detection
 - 📱 Responsive design for desktop and mobile devices
 - 🔒 Enhanced security with browser extension wallet integration
+- 🤖 AI-powered transaction verification using Coinbase AgentKit
 
 ## 🏗️ Architecture
 
@@ -108,11 +118,10 @@ The 0xXOC project consists of two main components:
 
 ```bash
 # Clone both repositories
-git clone https://github.com/yourusername/0xXOC-Backend.git
-git clone https://github.com/yourusername/0xXOC-Frontend.git
+git clone https://github.com/0xOucan/0xXOC-AIP2PMXNExchange.git
+cd 0xXOC-AIP2PMXNExchange
 
 # Use the launch script to start both services
-cp 0xXOC-Backend/launch.sh ./
 chmod +x launch.sh
 ./launch.sh
 ```
@@ -142,7 +151,7 @@ VITE_ESCROW_WALLET_ADDRESS=0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45
 
 ## 🔗 Contract Information
 
-### 📍 Supported Tokens on Base Network
+### 📍 Supported Stablecoins on Base Network
 - **USDC** (💵): `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` - USD Coin on Base
 - **MXNe** (🪙): `0x269caE7Dc59803e5C596c95756faEeBb6030E0aF` - Mexican Peso stablecoin backed by tokenized CETES
 - **XOC** (🍫): `0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf` - Base chain Mexican Peso paired CDP stable coin
@@ -151,6 +160,17 @@ VITE_ESCROW_WALLET_ADDRESS=0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45
 ### 📊 Token Statistics
 - **Explorer**: [BaseScan](https://basescan.org)
 - **Escrow Wallet**: [0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45](https://basescan.org/address/0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45)
+
+## 📜 Onchain Transaction Proofs
+
+Our platform has been successfully deployed and tested on Base Mainnet with real transactions:
+
+- [Transfer of 100 MXNe to User Wallet](https://basescan.org/tx/0x97c134a6ce6a8df7166f75193b9b23840a61cbce6d7704d52542f6ae9300ac37) - A user receiving 100 MXNe tokens
+- [USDC Transaction](https://basescan.org/tx/0x13dd401355a369c4025f18d2939a2ad266f670e7ff72a51459d9394985ce0193) - USDC transfer through the platform
+- [Seller receiving MXNe](https://basescan.org/tx/0xafed570012bd9421bc6cdb8e56a6e73e8c3d7cb24accf69dcbc0d0bddebeed52) - Completed sell order with MXNe
+- [XOC Transaction](https://basescan.org/tx/0x55e66146ce6f3905733dc3ff8475c9e53464fcfe95dd92f8d25c5b342a4573ad) - XOC stablecoin transfer
+
+Additional transaction details can be found on [our Gist](https://gist.github.com/0xOucan/d25c73bd0922dd4dfc8c30a077877).
 
 ## 🛠️ Supported Networks
 
@@ -161,7 +181,7 @@ VITE_ESCROW_WALLET_ADDRESS=0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45
 
 ## 🔌 Backend Integration
 
-This platform connects the web interface to the 0xXOC backend API to process marketplace orders and execute blockchain operations.
+This platform connects the web interface to the 0xXOC backend API to process marketplace orders and execute blockchain operations. The backend leverages Coinbase AgentKit for secure AI-powered transaction verification.
 
 ### Communication Flow
 
@@ -303,7 +323,6 @@ The 0xXOC marketplace uses a secure escrow system to protect all trades:
 
 ### API Examples
 
-#### Marketplace Commands
 ```
 # Create a selling order
 POST /api/selling-orders

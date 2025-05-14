@@ -1,9 +1,14 @@
 # 🏛️ 0xXOC Backend: P2P Token Marketplace API
 
+> 🏆 **Base Batch LatAm Hackathon Project** - Stablecoins Track (DeFi P2P Exchange)
+> 
+> GitHub: [https://github.com/0xOucan/0xXOC-AIP2PMXNExchange](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange)
+
 ## 📑 Table of Contents
 - [Overview](#-overview)
 - [Features](#-features)
 - [Contract Information](#-contract-information)
+- [Onchain Transaction Proofs](#-onchain-transaction-proofs)
 - [Quick Start](#-quick-start)
 - [Supported Tokens](#-supported-tokens)
 - [Core Features](#-core-features)
@@ -22,6 +27,8 @@
 - 🔐 Secure escrow wallet system with USDC, MXNe, XOC, and ETH support
 - 🔄 Automated order matching and fulfillment
 - 🤖 AI-powered assistance for transaction validation
+
+As a Base Batch LatAm hackathon project, we focus on stablecoin integration for remittances, enabling people in the US to efficiently send money to relatives in Mexico by using Base network's stablecoins.
 
 ## 🚀 Features
 
@@ -47,7 +54,7 @@ The 0xXOC backend implements several key features:
 
 ## 🔗 Contract Information
 
-### 📍 Supported Tokens on Base Network
+### 📍 Supported Stablecoins on Base Network
 - **USDC**: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` - USD Coin on Base
 - **MXNe**: `0x269caE7Dc59803e5C596c95756faEeBb6030E0aF` - Mexican Peso stablecoin on Base
 - **XOC**: `0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf` - Base chain Mexican Peso paired CDP stable coin
@@ -56,6 +63,17 @@ The 0xXOC backend implements several key features:
 ### 📊 Token Statistics
 - **View on Explorer**: [BaseScan](https://basescan.org)
 - **Escrow Wallet**: [0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45](https://basescan.org/address/0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45)
+
+## 📜 Onchain Transaction Proofs
+
+Our platform has been successfully deployed and tested on Base Mainnet with real transactions:
+
+- [Transfer of 100 MXNe to User Wallet](https://basescan.org/tx/0x97c134a6ce6a8df7166f75193b9b23840a61cbce6d7704d52542f6ae9300ac37) - A user receiving 100 MXNe tokens
+- [USDC Transaction](https://basescan.org/tx/0x13dd401355a369c4025f18d2939a2ad266f670e7ff72a51459d9394985ce0193) - USDC transfer through the platform
+- [Seller receiving MXNe](https://basescan.org/tx/0xafed570012bd9421bc6cdb8e56a6e73e8c3d7cb24accf69dcbc0d0bddebeed52) - Completed sell order with MXNe
+- [XOC Transaction](https://basescan.org/tx/0x55e66146ce6f3905733dc3ff8475c9e53464fcfe95dd92f8d25c5b342a4573ad) - XOC stablecoin transfer
+
+Additional transaction details can be found on [our Gist](https://gist.github.com/0xOucan/d25c73bd0922dd4dfc8c30a077877).
 
 ## 🚀 Quick Start
 
@@ -68,12 +86,11 @@ The 0xXOC backend implements several key features:
 ### Installation
 
 ```bash
-# Clone both repositories
-git clone https://github.com/yourusername/0xXOC-Backend.git
-git clone https://github.com/yourusername/0xXOC-Frontend.git
+# Clone the repository
+git clone https://github.com/0xOucan/0xXOC-AIP2PMXNExchange.git
+cd 0xXOC-AIP2PMXNExchange
 
 # Use the launch script to start both services
-cp 0xXOC-Backend/launch.sh ./
 chmod +x launch.sh
 ./launch.sh
 ```
@@ -209,7 +226,7 @@ npm run api:prod
 
 ## 🌐 Web Interface
 
-0xXOC has a companion web interface available in the [0xXOC-Frontend](https://github.com/yourusername/0xXOC-Frontend) repository that provides:
+0xXOC has a companion web interface available in the [0xXOC-Frontend](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange/tree/main/0xXOC-Frontend) repository that provides:
 
 - 💰 Token marketplace with buying and selling order creation
 - 🧾 OXXO Spin QR code scanning and processing
@@ -310,8 +327,13 @@ POST /api/buying-orders/:orderId/fill
 ## 🔗 Resources
 
 ### Repository Links
-- **Backend (0xXOC-Backend)**: [GitHub Repository](https://github.com/yourusername/0xXOC-Backend)
-- **Frontend (0xXOC-Frontend)**: [GitHub Repository](https://github.com/yourusername/0xXOC-Frontend)
+- **Main Repository**: [GitHub Repository](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange)
+- **Frontend Component**: [0xXOC-Frontend](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange/tree/main/0xXOC-Frontend)
+- **Backend Component**: [0xXOC-Backend](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange/tree/main/0xXOC-Backend)
+
+### Hackathon Information
+- **Event**: [Base Batch LatAm](https://base-batch-latam.devfolio.co/overview)
+- **Track**: Stablecoins (DeFi P2P Exchange)
 
 ### Contact & Social
 - **Twitter**: [@0xoucan](https://x.com/0xoucan)

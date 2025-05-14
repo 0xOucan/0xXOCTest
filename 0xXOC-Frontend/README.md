@@ -1,5 +1,9 @@
 # 🏛️ 0xXOC: P2P Token Marketplace
 
+> 🏆 **Base Batch LatAm Hackathon Project** - Stablecoins Track (DeFi P2P Exchange)
+> 
+> GitHub: [https://github.com/0xOucan/0xXOC-AIP2PMXNExchange](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange)
+
 ## 📑 Table of Contents
 - [Overview](#-overview)
 - [Features](#-features)
@@ -18,13 +22,15 @@
 
 0xXOC is a P2P marketplace designed to bridge the gap between cryptocurrency and Mexican Pesos through OXXO Spin QR codes. Our platform enables users to buy and sell digital assets using Mexico's most accessible payment method, making cryptocurrency accessible to everyone in Mexico.
 
-The 0xXOC platform handles the entire trading process with a secure escrow system, protecting both buyers and sellers while ensuring seamless transactions. All data is encrypted and stored on-chain, with transactions verified and protected by the Coinbase Agentkit AI agent on the Base network.
+Built for the Base Batch LatAm hackathon, 0xXOC focuses on stablecoin integration, particularly USDC, MXNe, and XOC. The platform is especially valuable for remittances, allowing people in the US to send money to relatives in Mexico by selling stablecoins for MXN that can be redeemed via OXXO Spin.
+
+The 0xXOC platform handles the entire trading process with a secure escrow system, protecting both buyers and sellers while ensuring seamless transactions. All data is encrypted and stored on-chain, with transactions verified and protected by the Coinbase AgentKit AI agent on the Base network.
 
 ## ✨ Features
 
 - 🛒 Create and browse buying/selling orders for cryptocurrency
 - 💸 Seamless integration with OXXO Spin QR codes for fiat payments
-- 🏦 Support for multiple tokens: XOC, MXNe, USDC, and ETH
+- 🏦 Support for multiple stablecoins: MXNe, USDC, XOC, and ETH
 - 👛 External wallet support with secure transaction handling
 - 🔐 Secure escrow system for protected trades
 - 🔄 Real-time transaction monitoring and status tracking
@@ -45,12 +51,11 @@ The 0xXOC platform handles the entire trading process with a secure escrow syste
 ### Installation
 
 ```bash
-# Clone both repositories
-git clone https://github.com/yourusername/0xXOC-Backend.git
-git clone https://github.com/yourusername/0xXOC-Frontend.git
+# Clone the repository
+git clone https://github.com/0xOucan/0xXOC-AIP2PMXNExchange.git
+cd 0xXOC-AIP2PMXNExchange
 
 # Use the launch script to start both services
-cp 0xXOC-Backend/launch.sh ./
 chmod +x launch.sh
 ./launch.sh
 ```
@@ -81,7 +86,7 @@ VITE_ESCROW_WALLET_ADDRESS=0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45
 
 ## 🔌 Backend Integration
 
-This web interface connects to the [0xXOC backend API](https://github.com/yourusername/0xXOC-Backend) to process marketplace orders and execute blockchain operations.
+This web interface connects to the 0xXOC backend API to process marketplace orders and execute blockchain operations. The backend leverages Coinbase AgentKit for AI-powered transaction verification.
 
 ### Communication Flow
 
@@ -238,7 +243,7 @@ The 0xXOC web interface implements several security best practices:
 
 The 0xXOC marketplace uses a secure escrow system to protect all trades:
 - Tokens are held in escrow during the trading process
-- Escrow is controlled by smart contracts and verified by Coinbase Agent Kit
+- Escrow is controlled by smart contracts and verified by Coinbase AgentKit
 - All transactions are recorded on-chain for full transparency
 - Escrow is only released when all conditions are met
 
@@ -254,7 +259,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 🔗 Related Projects
 
-- [0xXOC Backend](https://github.com/yourusername/0xXOC-Backend) - Backend API for the P2P marketplace
+- [0xXOC Backend](https://github.com/0xOucan/0xXOC-AIP2PMXNExchange/0xXOC-Backend) - Backend API for the P2P marketplace
 
 ## 📧 Contact
 
