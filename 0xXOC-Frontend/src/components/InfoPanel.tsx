@@ -35,7 +35,7 @@ const InfoPanel: React.FC = () => {
 
     try {
       // Send API key to backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/initialize-agent`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/initialize-agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

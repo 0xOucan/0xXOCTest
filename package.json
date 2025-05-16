@@ -12,9 +12,11 @@
     "install:all": "npm install && npm run install:backend && npm run install:frontend",
     "install:backend": "cd 0xXOC-Backend && npm install",
     "install:frontend": "cd 0xXOC-Frontend && npm install",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd 0xXOC-Backend && npm run build",
+    "build": "npm run build:frontend",
     "build:frontend": "cd 0xXOC-Frontend && npm run build",
+    "dev:backend": "cd 0xXOC-Backend && npm run dev",
+    "dev:frontend": "cd 0xXOC-Frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "vercel-build": "bash vercel-build.sh",
     "start:dev": "bash launch.sh",
     "start:backend": "cd 0xXOC-Backend && npm run api",
@@ -32,5 +34,8 @@
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
   }
 } 

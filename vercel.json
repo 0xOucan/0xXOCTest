@@ -1,28 +1,26 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "0xXOC-Frontend/dist",
   "builds": [
     {
       "src": "0xXOC-Backend/api/index.js",
       "use": "@vercel/node"
     },
     {
-      "src": "0xXOC-Frontend/dist/**",
-      "use": "@vercel/static"
+      "src": "0xXOC-Frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/0xXOC-Backend/api/index.js"
+      "dest": "0xXOC-Backend/api/index.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/0xXOC-Frontend/dist/$1"
+      "dest": "0xXOC-Frontend/dist/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 } 

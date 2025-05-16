@@ -36,6 +36,21 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Add CORS headers to allow requests from any origin
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  
+  // Handle OPTIONS method
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 // Basic health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
