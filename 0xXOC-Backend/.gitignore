@@ -28,4 +28,9 @@ wallet_data.txt
 !src/action-providers/**/*.ts
 !src/action-providers/bobc-protocol/*.ts
 !src/action-providers/xocolatl/*.ts
-    
+!src/action-providers/token-buying-order/*.ts
+!src/action-providers/token-buying-order-filler/*.ts
+!src/action-providers/token-selling-order/*.ts
+!src/action-providers/token-selling-order-filler/*.ts
+!src/action-providers/token-buying-order-filler/*.ts
+!src/action-providers/token-selling-order-filler/*.ts
