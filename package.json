@@ -1,0 +1,36 @@
+{
+  "name": "0xxoc-p2p-exchange",
+  "version": "1.0.0",
+  "description": "0xXOC P2P Exchange - a decentralized exchange for XOC, MXNe, and USDC tokens",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "0xXOC-Backend",
+    "0xXOC-Frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:backend && npm run install:frontend",
+    "install:backend": "cd 0xXOC-Backend && npm install",
+    "install:frontend": "cd 0xXOC-Frontend && npm install",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd 0xXOC-Backend && npm run build",
+    "build:frontend": "cd 0xXOC-Frontend && npm run build",
+    "vercel-build": "bash vercel-build.sh",
+    "start:dev": "bash launch.sh",
+    "start:backend": "cd 0xXOC-Backend && npm run api",
+    "start:frontend": "cd 0xXOC-Frontend && npm run dev"
+  },
+  "keywords": [
+    "p2p",
+    "exchange",
+    "blockchain",
+    "crypto",
+    "xoc",
+    "mxne"
+  ],
+  "author": "0xoucan",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 

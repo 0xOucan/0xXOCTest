@@ -7,6 +7,7 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
+const fetch = require('node-fetch');
 
 // Try multiple potential .env file locations
 const potentialPaths = [
@@ -82,13 +83,136 @@ if (process.env.ESCROW_WALLET_PRIVATE_KEY) {
 process.env.ESCROW_WALLET_PRIVATE_KEY = process.env.ESCROW_WALLET_PRIVATE_KEY || "0x0eecf4305e835";
 console.log("Using ESCROW_WALLET_PRIVATE_KEY:", process.env.ESCROW_WALLET_PRIVATE_KEY.substring(0, 10) + "...");
 
-// Now require and run the actual test (this will now have the env vars)
-require('./dist/action-providers/cUSDescrowforiAmigoP2P/test').testBuyingOrder()
-  .then(() => {
-    console.log('Test completed successfully');
-    process.exit(0);
-  })
-  .catch(error => {
-    console.error('Test failed:', error);
-    process.exit(1);
-  }); 
+// Base URL for the API
+const API_URL = process.env.API_URL || 'http://localhost:4000';
+
+// Test API key - this would be provided by users in production
+const TEST_API_KEY = process.env.TEST_OPENAI_API_KEY || process.env.OPENAI_API_KEY || 'sk-example-key-for-testing123456';
+
+// Temporary wallet address for testing
+const TEST_WALLET_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
+
+/**
+ * Test agent initialization with API key
+ */
+async function testAgentInitialization() {
+  console.log('\n📝 Testing agent initialization with user-provided API key...');
+  
+  try {
+    const response = await fetch(`${API_URL}/api/initialize-agent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apiKey: TEST_API_KEY,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      console.log('✅ Success:', data.message);
+    } else {
+      console.error('❌ Error:', data.message);
+    }
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+/**
+ * Test chat with agent
+ */
+async function testAgentChat() {
+  console.log('\n💬 Testing agent chat with API key in headers...');
+  
+  try {
+    const response = await fetch(`${API_URL}/api/agent/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-openai-api-key': TEST_API_KEY,
+      },
+      body: JSON.stringify({
+        userInput: 'Hello, what is 0xXOC?',
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      console.log('✅ Response received:');
+      console.log(data.response.substring(0, 100) + '...');
+    } else {
+      console.error('❌ Error:', data.error);
+    }
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+/**
+ * Test wallet connection
+ */
+async function testWalletConnection() {
+  console.log('\n🔌 Testing wallet connection...');
+  
+  try {
+    const response = await fetch(`${API_URL}/api/wallet/connect`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        walletAddress: TEST_WALLET_ADDRESS,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      console.log('✅ Success:', data.message);
+    } else {
+      console.error('❌ Error:', data.message);
+    }
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+/**
+ * Test server health
+ */
+async function testHealth() {
+  console.log('\n🏥 Testing server health...');
+  
+  try {
+    const response = await fetch(`${API_URL}/api/health`);
+    const data = await response.json();
+    
+    console.log('📊 Health status:', data.status);
+    console.log('🌐 Connected network:', data.network);
+    console.log('🔌 Wallet connected:', data.walletConnected);
+    
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+/**
+ * Run all tests
+ */
+async function runTests() {
+  console.log('🧪 Starting API tests...');
+  
+  await testHealth();
+  await testWalletConnection();
+  await testAgentInitialization();
+  await testAgentChat();
+  
+  console.log('\n✅ All tests completed');
+}
+
+// Run tests
+runTests().catch(console.error); 

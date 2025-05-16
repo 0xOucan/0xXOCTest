@@ -5,6 +5,8 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { HumanMessage } from "@langchain/core/messages";
 import * as dotenv from "dotenv";
+import * as path from "path";
+import * as fs from "fs";
 import { initializeAgent } from "./chatbot";
 import { pendingTransactions, updateTransactionStatus, getTransactionById } from "./utils/transaction-utils";
 import { startAtomicSwapRelay } from "./services/atomic-swap-relay";
@@ -21,7 +23,6 @@ import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay"
 import { startTokenBuyingOrderFillerRelay } from "./services/token-buying-order-filler-relay";
 import multer from "multer";
 import { saveUploadedFile, getFileById, deleteFile } from "./utils/file-storage";
-import path from "path";
 import { startTokenSellingOrderFillerRelay, manuallyCheckFillTransactions, processCompletedFillsTokenTransfers } from './services/token-selling-order-filler-relay';
 import { 
   getFillById, 
@@ -29,7 +30,30 @@ import {
   updateFillStatus 
 } from './action-providers/token-selling-order-filler/utils';
 
-dotenv.config();
+// Try to load .env from multiple locations
+const envPaths = [
+  '.env',
+  '../.env',
+  path.resolve(__dirname, '../.env'),
+  path.resolve(__dirname, '../../.env'),
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    console.log(`Loading environment from ${envPath}`);
+    const result = dotenv.config({ path: envPath });
+    if (!result.error) {
+      envLoaded = true;
+      break;
+    }
+  }
+}
+
+if (!envLoaded) {
+  console.log('No .env file found, trying default dotenv.config()');
+  dotenv.config();
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -62,10 +86,18 @@ const agentCache: Record<string, { agent: any, config: any, timestamp: number }>
 // Cache expiration time (30 minutes)
 const CACHE_EXPIRATION_MS = 30 * 60 * 1000;
 
+// Flag to track if user has provided an API key
+let hasUserProvidedApiKey = false;
+
 /**
  * Get or create an agent for the current wallet address and network
  */
-async function getOrCreateAgent(walletAddress: string | null, network: string = "base") {
+async function getOrCreateAgent(walletAddress: string | null, network: string = "base", apiKey?: string) {
+  // Check if user has provided an API key or we're using environment variable
+  if (!apiKey && !process.env.OPENAI_API_KEY && !hasUserProvidedApiKey) {
+    throw new Error("No OpenAI API key provided. Please provide an API key through the frontend.");
+  }
+  
   // Create a cache key - combines wallet address (or "default") and network
   const cacheKey = `${walletAddress || "default"}-${network}`;
   const now = Date.now();
@@ -87,7 +119,8 @@ async function getOrCreateAgent(walletAddress: string | null, network: string = 
   const { agent, config } = await initializeAgent({ 
     network: network, 
     nonInteractive: true,
-    walletAddress: walletAddress
+    walletAddress: walletAddress,
+    apiKey: apiKey // Pass apiKey to initializeAgent
   });
   
   // Cache the new agent
@@ -124,18 +157,86 @@ function updateAssociatedSwapRecords(txId, status, hash) {
   }
 }
 
+// Create Express app
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+// Export a function to handle requests in serverless environments
+export const handleRequest = async (req, res) => {
+  // Make sure agent is initialized first (if needed)
+  if (Object.keys(agentCache).length === 0) {
+    try {
+      // Only initialize if we have necessary environment variables or it's not required
+      if (process.env.WALLET_PRIVATE_KEY && (process.env.OPENAI_API_KEY || hasUserProvidedApiKey)) {
+        const { agent: defaultAgent, config: defaultConfig } = await initializeAgent({ 
+          network: "base", 
+          nonInteractive: true 
+        });
+        
+        // Initialize the default agent cache
+        agentCache["default-base"] = {
+          agent: defaultAgent,
+          config: defaultConfig,
+          timestamp: Date.now()
+        };
+      }
+    } catch (error) {
+      console.error("Failed to initialize agent in serverless function:", error);
+    }
+  }
+  
+  // Forward the request to our Express app
+  return new Promise((resolve, reject) => {
+    // Create a fake server response to capture the response
+    const mockRes = {
+      ...res,
+      end: (data) => {
+        res.end(data);
+        resolve();
+      }
+    };
+    
+    app._router.handle(req, mockRes, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
 /**
  * Create an Express server to expose the AI agent as an API
  */
 async function createServer() {
   try {
-    // Initialize the agent in non-interactive mode, automatically selecting Base
-    console.log("🤖 Initializing AI agent for API...");
-    const { agent: defaultAgent, config: defaultConfig } = await initializeAgent({ 
-      network: "base", 
-      nonInteractive: true 
-    });
-    console.log("✅ Agent initialization complete");
+    // Check if in production and no API key is provided
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasApiKey = !!process.env.OPENAI_API_KEY;
+    
+    console.log("🤖 Initializing API server...");
+    
+    if (isProduction && !hasApiKey) {
+      console.log("⚠️ Running in production mode without OpenAI API key");
+      console.log("🔑 Waiting for users to provide their own API keys via frontend");
+    } else {
+      // Initialize the agent in non-interactive mode, automatically selecting Base
+      console.log("🤖 Initializing AI agent for API...");
+      const { agent: defaultAgent, config: defaultConfig } = await initializeAgent({ 
+        network: "base", 
+        nonInteractive: true 
+      });
+      console.log("✅ Agent initialization complete");
+      
+      // Initialize the default agent cache
+      agentCache["default-base"] = {
+        agent: defaultAgent,
+        config: defaultConfig,
+        timestamp: Date.now()
+      };
+    }
     
     // Start the atomic swap relay service
     const stopRelayService = startAtomicSwapRelay();
@@ -151,18 +252,6 @@ async function createServer() {
     
     // Start the token selling order filler relay service
     const stopTokenSellingOrderFillerRelay = startTokenSellingOrderFillerRelay();
-    
-    // Initialize the default agent cache
-    agentCache["default-base"] = {
-      agent: defaultAgent,
-      config: defaultConfig,
-      timestamp: Date.now()
-    };
-
-    // Create Express app
-    const app = express();
-    app.use(cors());
-    app.use(bodyParser.json());
 
     // Wallet connection endpoint
     app.post("/api/wallet/connect", async (req, res) => {
@@ -409,24 +498,45 @@ async function createServer() {
 
         console.log(`🔍 Received query: "${userInput}"`);
         
-        // Get agent for the current wallet address and network
-        let { agent, config } = await getOrCreateAgent(connectedWalletAddress, selectedNetwork);
+        // Extract API key from headers or use cached agent
+        const apiKey = req.headers['x-openai-api-key'] as string;
         
-        let finalResponse = "";
-        // Use streaming for real-time updates
-        const stream = await agent.stream(
-          { messages: [new HumanMessage(userInput)] },
-          config
-        );
-        
-        for await (const chunk of stream) {
-          if ("agent" in chunk) {
-            finalResponse = chunk.agent.messages[0].content;
-          }
+        // Check if API key has been provided
+        if (!apiKey && !hasUserProvidedApiKey && !process.env.OPENAI_API_KEY) {
+          return res.status(403).json({
+            error: "OpenAI API key required. Please provide your API key on the home page before using the chat feature."
+          });
         }
         
-        console.log(`✅ Response sent (${finalResponse.length} chars)`);
-        return res.json({ response: finalResponse });
+        // Get agent for the current wallet address and network
+        try {
+          let { agent, config } = await getOrCreateAgent(
+            connectedWalletAddress, 
+            selectedNetwork,
+            apiKey
+          );
+          
+          let finalResponse = "";
+          // Use streaming for real-time updates
+          const stream = await agent.stream(
+            { messages: [new HumanMessage(userInput)] },
+            config
+          );
+          
+          for await (const chunk of stream) {
+            if ("agent" in chunk) {
+              finalResponse = chunk.agent.messages[0].content;
+            }
+          }
+          
+          console.log(`✅ Response sent (${finalResponse.length} chars)`);
+          return res.json({ response: finalResponse });
+        } catch (agentError) {
+          console.error("🚨 Error with agent:", agentError);
+          return res.status(401).json({ 
+            error: "Failed to initialize agent. Please check your API key or try again." 
+          });
+        }
       } catch (err: any) {
         console.error("🚨 Error in /api/agent/chat:", err);
         return res.status(500).json({ error: err.message || "Unknown error occurred" });
@@ -440,8 +550,55 @@ async function createServer() {
         service: "MictlAI API",
         walletConnected: connectedWalletAddress ? true : false,
         network: selectedNetwork,
-        supportedNetworks: ["base", "arbitrum", "mantle", "zksync"]
+        supportedNetworks: ["base", "arbitrum", "mantle", "zkSync"]
       });
+    });
+
+    // Initialize agent with user-provided OpenAI API key
+    app.post("/api/initialize-agent", async (req, res) => {
+      try {
+        const { apiKey } = req.body;
+        
+        if (!apiKey || typeof apiKey !== 'string' || !apiKey.startsWith('sk-')) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid OpenAI API key format. Must start with "sk-"' 
+          });
+        }
+        
+        console.log(`🔑 Agent initialization requested with user-provided API key`);
+        
+        // Initialize a new agent with the user's API key
+        try {
+          const { agent, config } = await getOrCreateAgent(
+            connectedWalletAddress, 
+            selectedNetwork,
+            apiKey
+          );
+          
+          // Set flag that user has provided an API key
+          hasUserProvidedApiKey = true;
+          
+          console.log(`✅ Agent successfully initialized with user-provided API key`);
+          
+          return res.json({
+            success: true,
+            message: 'Agent initialized successfully with your API key'
+          });
+        } catch (agentError) {
+          console.error('❌ Error initializing agent with user API key:', agentError);
+          return res.status(401).json({ 
+            success: false, 
+            message: 'Invalid or unauthorized OpenAI API key'
+          });
+        }
+      } catch (error) {
+        console.error('Error in /api/initialize-agent:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: error instanceof Error ? error.message : 'Unknown server error' 
+        });
+      }
     });
 
     // Token Selling Order endpoints
@@ -1372,7 +1529,7 @@ async function createServer() {
     // Start the server
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
-      console.log(`�� API server running at http://localhost:${PORT}`);
+      console.log(`🚀 API server running at http://localhost:${PORT}`);
       
       // Handle graceful shutdown
       process.on('SIGINT', () => {
@@ -1411,5 +1568,62 @@ function getMimeType(fileExt: string): string {
   }
 }
 
-// Start the server
-createServer(); 
+// Only start the server if we're not being imported by another module
+if (require.main === module) {
+  // Export a function to handle requests in serverless environments
+export const handleRequest = async (req, res) => {
+  // Make sure agent is initialized first (if needed)
+  if (Object.keys(agentCache).length === 0) {
+    try {
+      // Only initialize if we have necessary environment variables or it's not required
+      if (process.env.WALLET_PRIVATE_KEY && (process.env.OPENAI_API_KEY || hasUserProvidedApiKey)) {
+        const { agent: defaultAgent, config: defaultConfig } = await initializeAgent({ 
+          network: "base", 
+          nonInteractive: true 
+        });
+        
+        // Initialize the default agent cache
+        agentCache["default-base"] = {
+          agent: defaultAgent,
+          config: defaultConfig,
+          timestamp: Date.now()
+        };
+      }
+    } catch (error) {
+      console.error("Failed to initialize agent in serverless function:", error);
+    }
+  }
+  
+  // Forward the request to our Express app
+  return new Promise((resolve, reject) => {
+    // Create a fake server response to capture the response
+    const mockRes = {
+      ...res,
+      end: (data) => {
+        res.end(data);
+        resolve();
+      }
+    };
+    
+    app._router.handle(req, mockRes, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
+// Only start the server if we're not being imported by another module
+if (require.main === module) {
+  // Start the server
+  createServer();
+}
+
+// Export the app for testing and serverless environments
+export default app;
+}
+
+// Export the app for testing and serverless environments
+export default app; 

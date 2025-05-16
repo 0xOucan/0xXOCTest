@@ -11,6 +11,8 @@ import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import * as dotenv from "dotenv";
+import * as path from "path";
+import * as fs from "fs";
 import * as readline from "readline";
 import { TelegramInterface } from "./telegram-interface";
 import "reflect-metadata";
@@ -31,7 +33,30 @@ import { createPendingTransaction, pendingTransactions } from "./utils/transacti
 import { startTokenBuyingOrderRelay } from "./services/token-buying-order-relay";
 import { tokenSellingOrderFillerActionProvider } from "./action-providers/token-selling-order-filler";
 
-dotenv.config();
+// Try to load .env from multiple locations
+const envPaths = [
+  '.env',
+  '../.env',
+  path.resolve(__dirname, '../.env'),
+  path.resolve(__dirname, '../../.env'),
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    console.log(`Loading environment from ${envPath}`);
+    const result = dotenv.config({ path: envPath });
+    if (!result.error) {
+      envLoaded = true;
+      break;
+    }
+  }
+}
+
+if (!envLoaded) {
+  console.log('No .env file found, trying default dotenv.config()');
+  dotenv.config();
+}
 
 // Interface type defined in transaction-utils module
 import type { PendingTransaction } from './utils/transaction-utils';
@@ -128,7 +153,12 @@ async function selectNetwork(): Promise<string> {
  * @param options Optional parameters for non-interactive initialization
  * @returns Agent executor and config
  */
-export async function initializeAgent(options?: { network?: string, nonInteractive?: boolean, walletAddress?: string }) {
+export async function initializeAgent(options?: { 
+  network?: string, 
+  nonInteractive?: boolean, 
+  walletAddress?: string,
+  apiKey?: string
+}) {
   try {
     console.log("Initializing agent...");
 
@@ -261,13 +291,14 @@ export async function initializeAgent(options?: { network?: string, nonInteracti
       }
     }
 
-    // Initialize LLM
+    // Initialize LLM with the provided API key if available
     const llm = new ChatOpenAI({
       model: "gpt-4o-mini",
       temperature: 0,
+      openAIApiKey: options?.apiKey || process.env.OPENAI_API_KEY,
     });
 
-    console.log("LLM initialized");
+    console.log("LLM initialized" + (options?.apiKey ? " with user-provided API key" : ""));
 
     // Initialize AgentKit with action providers
     const agentkit = await AgentKit.from({
@@ -630,6 +661,42 @@ async function chooseMode(): Promise<"chat" | "auto" | "telegram"> {
 async function main() {
   try {
     console.log("Starting initialization...");
+    
+    // Check if OPENAI_API_KEY is provided in environment variables
+    if (!process.env.OPENAI_API_KEY) {
+      console.log("⚠️ No OpenAI API key found in environment variables.");
+      console.log("🔑 In production testing mode, waiting for user to provide API key via frontend...");
+      
+      // If running in non-interactive mode (like in production), just log a message and return
+      // The agent will be initialized when user provides an API key through the frontend
+      if (process.env.NODE_ENV === 'production') {
+        console.log("🚀 API server is running, but agent will only be initialized when a user provides an API key.");
+        return;
+      }
+      
+      // In development mode, prompt for API key directly
+      console.log("📝 Since you're in development mode, you can provide an API key now to continue:");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      
+      const apiKey = await new Promise<string>((resolve) => {
+        rl.question("Enter your OpenAI API key: ", resolve);
+      });
+      
+      rl.close();
+      
+      if (!apiKey) {
+        console.error("❌ No API key provided. Exiting...");
+        process.exit(1);
+      }
+      
+      // Set the API key in the environment
+      process.env.OPENAI_API_KEY = apiKey;
+      console.log("✅ API key set successfully.");
+    }
+    
     const { agent, config } = await initializeAgent();
     console.log("Agent initialized successfully");
 

@@ -137,11 +137,21 @@ export const parseAgentResponse = (response: string): ParsedAgentResponse => {
  */
 export const sendChatMessage = async (userInput: string): Promise<ParsedAgentResponse> => {
   try {
+    // Get API key from localStorage if available
+    const apiKey = localStorage.getItem('openai_api_key');
+    
+    // Prepare headers with API key if available
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (apiKey) {
+      headers['x-openai-api-key'] = apiKey;
+    }
+    
     const response = await fetch(`${apiUrl}/api/agent/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({ userInput })
     });
 

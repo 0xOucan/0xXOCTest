@@ -13,6 +13,12 @@ const XOC_DECIMALS = 18;
 const MXNE_DECIMALS = 6;
 const USDC_DECIMALS = 6;
 
+// Get escrow addresses from environment variables, with fallbacks to default values
+const BASE_ESCROW_ADDRESS = import.meta.env.VITE_BASE_ESCROW_ADDRESS || "0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45";
+const ARBITRUM_ESCROW_ADDRESS = import.meta.env.VITE_ARBITRUM_ESCROW_ADDRESS || "";
+const MANTLE_ESCROW_ADDRESS = import.meta.env.VITE_MANTLE_ESCROW_ADDRESS || "";
+const ZKSYNC_ESCROW_ADDRESS = import.meta.env.VITE_ZKSYNC_ESCROW_ADDRESS || "";
+
 // Standard ERC20 ABI for balance queries
 const ERC20_ABI = [
   {
@@ -43,9 +49,6 @@ const baseClient = createPublicClient({
   chain: base,
   transport: http(),
 });
-
-// Escrow wallet addresses
-const BASE_ESCROW_ADDRESS = "0x9c77c6fafc1eb0821F1De12972Ef0199C97C6e45";
 
 // Token price estimates for USD value calculation
 const TOKEN_PRICES = {

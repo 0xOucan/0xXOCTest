@@ -20,6 +20,26 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
+# Create symlinks for .env file if root .env exists
+if [ -f ".env" ]; then
+    echo -e "${YELLOW}Found root .env file, creating symlinks...${NC}"
+    # Create symlink for backend
+    if [ ! -f "./0xXOC-Backend/.env" ]; then
+        ln -sf "$(pwd)/.env" "./0xXOC-Backend/.env"
+        echo "Created symlink for backend .env"
+    fi
+    # No need for frontend symlink as it uses env vars from root through Vite
+else
+    echo -e "${YELLOW}No root .env file found.${NC}"
+    echo "Please create a .env file in the root directory with required environment variables."
+    echo "See .env.example for reference."
+    
+    # Check if backend has its own .env file
+    if [ ! -f "./0xXOC-Backend/.env" ]; then
+        echo -e "${YELLOW}Warning: No .env file found for backend.${NC}"
+    fi
+fi
+
 # Configuration message
 echo -e "${YELLOW}Before starting, make sure you have:.${NC}"
 echo "1. Created a .env file in the 0xXOC-Backend directory with OPENAI_API_KEY and WALLET_PRIVATE_KEY"
@@ -28,7 +48,7 @@ echo ""
 read -p "Press Enter to continue or Ctrl+C to exit..."
 
 # Start the backend API server
-echo -e "${YELLOW}Starting 0xXOC API server...${NC}"
+echo -e "${YELLOW}Building and starting 0xXOC API server...${NC}"
 cd ./0xXOC-Backend
 npm install
 npm run build
@@ -41,7 +61,7 @@ echo -e "${YELLOW}Waiting for API server to initialize...${NC}"
 sleep 5
 
 # Start the frontend development server
-echo -e "${YELLOW}Starting frontend development server...${NC}"
+echo -e "${YELLOW}Building and starting frontend development server...${NC}"
 cd ../0xXOC-Frontend
 npm install
 npm run dev &
