@@ -1,5 +1,5 @@
 // API configuration
-export const apiUrl = 'http://localhost:4000'; // Use your actual API endpoint
+export const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'; // Falls back to localhost for development
 
 // Base blockchain configuration
 export const BASE_RPC_URL = 'https://mainnet.base.org';

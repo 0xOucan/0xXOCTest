@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PlayIcon, LoadingIcon } from './Icons';
 import { useNavigate } from 'react-router-dom';
 import { useNotification, NotificationType } from '../utils/notification';
+import { getApiUrl } from '../utils/api';
 
 const InfoPanel: React.FC = () => {
   const navigate = useNavigate();
@@ -34,8 +35,8 @@ const InfoPanel: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Send API key to backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/initialize-agent`, {
+      // Send API key to backend using our API utility
+      const response = await fetch(getApiUrl('/initialize-agent'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

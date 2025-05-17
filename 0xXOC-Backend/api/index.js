@@ -52,7 +52,7 @@ app.use((req, res, next) => {
 });
 
 // Basic health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'MictlAI API (Vercel Serverless)',
@@ -64,7 +64,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Simplified endpoint for testing
-app.post('/api/agent/chat', (req, res) => {
+app.post('/agent/chat', (req, res) => {
   // Check if OpenAI API key is provided
   const apiKey = req.headers['x-openai-api-key'];
   
@@ -77,6 +77,24 @@ app.post('/api/agent/chat', (req, res) => {
   // Return a simple response for now
   res.json({
     response: 'This is a serverless test response. The full agent will be available soon!'
+  });
+});
+
+// Initialize agent endpoint
+app.post('/initialize-agent', (req, res) => {
+  const { apiKey } = req.body;
+  
+  if (!apiKey) {
+    return res.status(400).json({
+      error: "API key is required"
+    });
+  }
+  
+  // In a real implementation, you would validate the API key
+  // For now, just return success
+  res.json({
+    success: true,
+    message: "Agent initialized successfully"
   });
 });
 
